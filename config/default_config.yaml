@@ -1,0 +1,43 @@
+# Default analysis parameters for the mitomorph pipeline.
+# Loaded and validated by src/mitomorph/config/loader.py (FR-42).
+# Bump `version` whenever parameters change in a way that could affect
+# reproducibility of prior results.
+
+version: "0.1.0"
+
+preprocessing:
+  illumination_correction: rolling_ball   # FR-03: rolling_ball | flat_field | none
+  normalization: zscore                   # FR-04: zscore | percentile
+  percentile_range: [1, 99]
+  denoising: non_local_means               # FR-05: non_local_means | bm3d | none
+  zstack_projection: max_intensity         # FR-06: max_intensity | focus_stack
+
+segmentation:
+  architecture: unet_resnet34              # FR-08: unet_resnet34 | attention_unet
+  input_size: [512, 512]
+  confidence_threshold: 0.5                # FR-12
+  checkpoint_path: data/models/segmentation_unet.pt
+
+celltype:
+  neuronal_markers: [NeuN, NFH, MAP2]       # FR-15
+  mitochondrial_markers: [Tom20, COXIV, MitoTracker, VDAC]
+
+classification:
+  model: random_forest                     # FR-27
+  n_estimators: 200
+  checkpoint_path: data/models/health_classifier.pkl
+
+validation:
+  target_dice: 0.85                        # NFR-05
+  target_accuracy: 0.80                    # NFR-06
+  k_folds: 5
+
+paths:
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  models_dir: data/models
+  reports_dir: data/processed/reports
+
+logging:
+  log_dir: logs
+  level: INFO
