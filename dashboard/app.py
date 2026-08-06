@@ -31,27 +31,27 @@ CUSTOM_CSS = """
         font-size: 2.1rem;
         font-weight: 800;
         margin: 0;
-        color: #1B1F3B;
+        color: #EDEBF7;
     }
     .hero-subtitle {
-        color: #6B7080;
+        color: #A8A4C0;
         font-size: 1.02rem;
         margin: 0.15rem 0 1.75rem 0;
     }
 
     div[data-testid="stMetric"] {
-        background: #F6F5FC;
-        border: 1px solid #E6E3F7;
+        background: #1E1B2B;
+        border: 1px solid #332F4A;
         border-radius: 14px;
         padding: 1rem 1.1rem;
     }
 
     .card {
-        background: #FFFFFF;
-        border: 1px solid #ECEBF5;
+        background: #1A1826;
+        border: 1px solid #2A2740;
         border-radius: 16px;
         padding: 1.5rem 1.6rem;
-        box-shadow: 0 1px 3px rgba(27, 31, 59, 0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
         margin-bottom: 1.25rem;
     }
 
@@ -64,8 +64,8 @@ CUSTOM_CSS = """
         letter-spacing: 0.02em;
         text-transform: uppercase;
     }
-    .badge-live { background: #E6F7EE; color: #0F9D58; }
-    .badge-stub { background: #FFF4E5; color: #B76E00; }
+    .badge-live { background: rgba(74, 222, 128, 0.16); color: #4ADE80; }
+    .badge-stub { background: rgba(251, 191, 36, 0.16); color: #FBBF24; }
 
     div[data-testid="stTabs"] button {
         font-weight: 600;
