@@ -260,6 +260,10 @@ with tab_analyze:
     animal_id = col1.text_input("Animal ID")
     condition = col2.selectbox("Condition", ["Naive", "SCI", "SCI + PTEN-KO", "SCI + PGC1a"])
     time_point = col3.text_input("Time point (e.g. '6 weeks post-SCI')")
+    st.caption(
+        "These label the saved run for tracking and comparison in the Results tab — "
+        "they don't change the detected regions, which depend only on the image."
+    )
 
     if st.button("Run analysis", type="primary", disabled=uploaded_file is None):
         if _get_model() is None:
@@ -280,7 +284,8 @@ with tab_analyze:
                 st.error(f"Analysis failed: {exc}")
             else:
                 n_regions = len(result["features"])
-                st.success(f"{n_regions} region(s) detected. Saved as run #{run_id}.")
+                saved_label = ", ".join(filter(None, [animal_id or None, condition, time_point or None]))
+                st.success(f"{n_regions} region(s) detected. Saved as run #{run_id} ({saved_label}).")
                 fig_col, stats_col = st.columns([2, 1])
                 with fig_col:
                     st.pyplot(_render_overlay(result["image"], result["mask"]))
@@ -306,41 +311,75 @@ with tab_results:
     if not runs:
         st.info("No analyses recorded yet. Run an analysis in the Analyze tab first.")
     else:
-        table = pd.DataFrame(
-            [
-                {
-                    "Run": r["run_id"],
-                    "File": r["filename"],
-                    "Animal": r["animal_id"] or "—",
-                    "Condition": r["condition"] or "—",
-                    "Time point": r["time_point"] or "—",
-                    "Regions": r["region_count"],
-                    "Frag. index": round(r["fragmentation_index"], 6),
-                    "Density": round(r["mitochondrial_density"], 4),
-                    "Corrected": "Yes" if r["corrected"] else "No",
-                    "When": r["created_at"],
-                }
-                for r in runs
-            ]
+        all_conditions = sorted({r["condition"] for r in runs if r["condition"]})
+        selected_conditions = st.multiselect(
+            "Filter by condition", options=all_conditions, default=all_conditions
         )
-        st.dataframe(table, use_container_width=True, hide_index=True)
+        filtered_runs = [r for r in runs if not r["condition"] or r["condition"] in selected_conditions]
 
-        run_by_id = {r["run_id"]: r for r in runs}
-        selected_id = st.selectbox(
-            "View run",
-            options=list(run_by_id.keys()),
-            format_func=lambda rid: f"#{rid} — {run_by_id[rid]['filename']}",
-        )
-        selected = run_by_id[selected_id]
+        if not filtered_runs:
+            st.info("No runs match the selected condition(s).")
+        else:
+            table = pd.DataFrame(
+                [
+                    {
+                        "Run": r["run_id"],
+                        "File": r["filename"],
+                        "Animal": r["animal_id"] or "—",
+                        "Condition": r["condition"] or "—",
+                        "Time point": r["time_point"] or "—",
+                        "Regions": r["region_count"],
+                        "Frag. index": round(r["fragmentation_index"], 6),
+                        "Density": round(r["mitochondrial_density"], 4),
+                        "Corrected": "Yes" if r["corrected"] else "No",
+                        "When": r["created_at"],
+                    }
+                    for r in filtered_runs
+                ]
+            )
+            st.dataframe(table, use_container_width=True, hide_index=True)
 
-        img_col, stats_col = st.columns([2, 1])
-        with img_col:
-            st.image(selected["overlay_path"])
-        with stats_col:
-            st.metric("Detected regions", selected["region_count"])
-            st.metric("Fragmentation index", f"{selected['fragmentation_index']:.4f}")
-            st.metric("Mitochondrial density", f"{selected['mitochondrial_density']:.4f}")
-            st.metric("Mean region area (px²)", f"{selected['mean_area']:.1f}")
+            conditions_present = sorted({r["condition"] for r in filtered_runs if r["condition"]})
+            if len(conditions_present) >= 2:
+                st.markdown("##### Comparison across conditions")
+                comparison = (
+                    pd.DataFrame(
+                        [
+                            {
+                                "Condition": r["condition"],
+                                "Regions": r["region_count"],
+                                "Fragmentation index": r["fragmentation_index"],
+                                "Mitochondrial density": r["mitochondrial_density"],
+                            }
+                            for r in filtered_runs
+                            if r["condition"]
+                        ]
+                    )
+                    .groupby("Condition")
+                    .mean(numeric_only=True)
+                )
+                chart_cols = st.columns(3)
+                for chart_col, metric in zip(chart_cols, comparison.columns):
+                    with chart_col:
+                        st.caption(metric)
+                        st.bar_chart(comparison[metric])
+
+            run_by_id = {r["run_id"]: r for r in filtered_runs}
+            selected_id = st.selectbox(
+                "View run",
+                options=list(run_by_id.keys()),
+                format_func=lambda rid: f"#{rid} — {run_by_id[rid]['filename']}",
+            )
+            selected = run_by_id[selected_id]
+
+            img_col, stats_col = st.columns([2, 1])
+            with img_col:
+                st.image(selected["overlay_path"])
+            with stats_col:
+                st.metric("Detected regions", selected["region_count"])
+                st.metric("Fragmentation index", f"{selected['fragmentation_index']:.4f}")
+                st.metric("Mitochondrial density", f"{selected['mitochondrial_density']:.4f}")
+                st.metric("Mean region area (px²)", f"{selected['mean_area']:.1f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_correct:
