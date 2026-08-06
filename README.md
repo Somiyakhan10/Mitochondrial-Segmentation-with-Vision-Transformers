@@ -2,9 +2,9 @@
 
 Deep-learning pipeline for automated segmentation, classification, and
 morphometric quantification of mitochondria in spinal cord tissue
-microscopy images, built to accelerate Prof. Patel's SCI mitochondrial
-dysfunction research. See [docs/srs.md](docs/srs.md) for the full
-requirements document this project implements.
+microscopy images, built to accelerate spinal cord injury (SCI)
+mitochondrial dysfunction research. See [docs/srs.md](docs/srs.md) for
+the full requirements document this project implements.
 
 ## Status
 

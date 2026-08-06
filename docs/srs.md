@@ -1,7 +1,7 @@
 # Software Requirements Specification (SRS)
 ## Mitochondrial Morphology Analysis Pipeline for Spinal Cord Injury Research
 
-### A Computer Vision Project Aligned with Prof. Patel's Mitochondrial Research
+### A Computer Vision Project Aligned with Mitochondrial Dysfunction Research in Chronic SCI
 
 ---
 
@@ -10,14 +10,14 @@
 #### 1.1 Purpose
 This document defines the software requirements for a deep learning-based image analysis pipeline designed to automatically segment, classify, and quantify mitochondrial morphology from microscopy images of spinal cord tissue. The system will provide researchers with high-throughput, reproducible analysis of mitochondrial health, enabling rapid assessment of therapeutic interventions for spinal cord injury (SCI).
 
-#### 1.2 Alignment with Prof. Patel's Research
-This project directly complements Prof. Patel's groundbreaking research on mitochondrial dysfunction in chronic SCI, specifically his findings that:
+#### 1.2 Alignment with Ongoing Research
+This project directly complements published research on mitochondrial dysfunction in chronic SCI, specifically findings that:
 
-- **Neuronal mitochondria exhibit ~50% loss of respiratory capacity** at 21 weeks post-SCI (Patel et al., Experimental Neurology 2026)
+- **Neuronal mitochondria exhibit ~50% loss of respiratory capacity** at 21 weeks post-SCI (Experimental Neurology 2026)
 - **PTEN knockout restores mitochondrial bioenergetic abilities** in chronic SCI conditions
 - **PGC1α upregulation can restore mitochondrial function** when applied during chronic SCI
 
-Rather than replicating his methods, this project provides a **computational tool** to accelerate his research by automating the analysis of mitochondrial morphology, which is currently a manual, time-consuming process in his lab.
+Rather than replicating existing methods, this project provides a **computational tool** to accelerate this research by automating the analysis of mitochondrial morphology, which is currently a manual, time-consuming process in most labs.
 
 #### 1.3 Scope
 The system will:
@@ -29,7 +29,7 @@ The system will:
 - Integrate explainable AI to identify morphological features most indicative of dysfunction
 
 #### 1.4 Intended Audience
-- Prof. Patel's lab researchers studying mitochondrial transplantation
+- Lab researchers studying mitochondrial transplantation
 - SCI researchers evaluating mitochondrial-targeted therapeutics
 - Neuroscientists investigating mitochondrial dynamics in neurodegeneration
 
@@ -182,7 +182,7 @@ outcome predictor)
 | NFR-08 | System shall provide Jupyter Notebook tutorials for all major workflows | High |
 | NFR-09 | System shall include command-line interface for batch processing | High |
 | NFR-10 | System shall provide interactive GUI for visualization and manual correction | Medium |
-| NFR-11 | System shall include comprehensive documentation with examples from Patel's research | High |
+| NFR-11 | System shall include comprehensive documentation with examples from real SCI research workflows | High |
 
 #### 4.4 Maintainability
 
@@ -264,7 +264,7 @@ imaging parameters (magnification, objective, exposure time)
 | Phase | Tasks | Estimated Duration |
 |-------|-------|-------------------|
 | Phase 1 | Literature review and requirements finalization | 1 week |
-| Phase 2 | Data collection and annotation (collaboration with Patel's lab) | 2-3 weeks |
+| Phase 2 | Data collection and annotation (collaboration with a research lab) | 2-3 weeks |
 | Phase 3 | Preprocessing pipeline development | 1 week |
 | Phase 4 | U-Net implementation and training | 2 weeks |
 | Phase 5 | Morphometric feature extraction | 1-2 weeks |
@@ -276,7 +276,7 @@ imaging parameters (magnification, objective, exposure time)
 
 ---
 
-### 7. Expected Contributions to Patel's Research
+### 7. Expected Contributions to SCI Research
 
 1. High-throughput analysis — automated processing of hundreds of images
 2. Reproducibility — standardized, objective morphometric measurements
@@ -289,8 +289,8 @@ imaging parameters (magnification, objective, exposure time)
 
 ### 8. References
 
-1. Patel, S.P., et al. (2026). Proteomics reveal PTEN as a critical mediator of sustained mitochondrial dysfunction during chronic spinal cord injury. *Experimental Neurology*, 404, 115880.
-2. Patel, S.P., et al. (2022). Erodible thermogelling hydrogels for localized mitochondrial transplantation to the spinal cord. *Mitochondrion*, 65, 91-101.
+1. Author, S.P., et al. (2026). Proteomics reveal PTEN as a critical mediator of sustained mitochondrial dysfunction during chronic spinal cord injury. *Experimental Neurology*, 404, 115880.
+2. Author, S.P., et al. (2022). Erodible thermogelling hydrogels for localized mitochondrial transplantation to the spinal cord. *Mitochondrion*, 65, 91-101.
 3. Fecher, C., et al. (2019). Cell-type-specific profiling of brain mitochondria reveals functional and molecular diversity. *Nature Neuroscience*, 22, 1731-1742.
 4. Gollihue, J.L., et al. (2018). Effects of mitochondrial transplantation on bioenergetics, cellular incorporation, and functional recovery after spinal cord injury. *Journal of Neurotrauma*, 35, 1800-1818.
 5. Stewart, A.N., et al. (2023). PTEN knockout using retrogradely transported AAVs transiently restores locomotor abilities in both acute and chronic spinal cord injury. *Experimental Neurology*, 368, 114502.
@@ -321,8 +321,8 @@ imaging parameters (magnification, objective, exposure time)
 
 1. Segmentation accuracy exceeds Dice score of 0.85 on validation data
 2. Analysis speed processes 100 images in under 1 hour
-3. Results replicate Patel's findings showing significantly different morphometric features between naïve and chronic SCI conditions
+3. Results replicate published findings showing significantly different morphometric features between naïve and chronic SCI conditions
 4. Cell-type specificity correctly separates neuronal from non-neuronal mitochondria
 5. Classification accuracy exceeds 80% for mitochondrial health categories
 6. Publication-quality figures can be generated automatically
-7. Integration with Patel's lab workflow is smooth and requires minimal training
+7. Integration with a research lab's workflow is smooth and requires minimal training
