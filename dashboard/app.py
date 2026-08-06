@@ -22,7 +22,6 @@ from skimage.measure import label, regionprops
 
 from mitomorph.data.database import AnalysisDatabase
 from mitomorph.data.segmentation_runs import load_run_artifacts, save_run_artifacts
-from mitomorph.exceptions import MitoMorphError
 from mitomorph.morphometrics.dysfunction_indices import fragmentation_index, mitochondrial_density
 from mitomorph.morphometrics.single_features import extract_single_features
 from mitomorph.preprocessing.channel_utils import extract_mitochondrial_channel
@@ -31,7 +30,7 @@ from mitomorph.preprocessing.normalization import zscore_normalize
 from mitomorph.preprocessing.validators import validate_image
 from mitomorph.segmentation.infer import load_model, segment
 
-st.set_page_config(page_title="MitoMorph", page_icon="\U0001f9ec", layout="wide")
+st.set_page_config(page_title="MitoMorph", layout="wide")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHECKPOINT_PATH = REPO_ROOT / "data" / "models" / "segmentation_unet.pt"
@@ -176,14 +175,7 @@ CUSTOM_CSS = """
     .block-container {padding-top: 2.5rem; max-width: 1200px;}
 
     .hero {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
         margin-bottom: 0.25rem;
-    }
-    .hero-icon {
-        font-size: 2.4rem;
-        line-height: 1;
     }
     .hero-title {
         font-size: 2.1rem;
@@ -235,7 +227,6 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 st.markdown(
     """
     <div class="hero">
-        <div class="hero-icon">\U0001f9ec</div>
         <h1 class="hero-title">MitoMorph</h1>
     </div>
     <p class="hero-subtitle">
@@ -258,9 +249,7 @@ status_col3.metric(
 )
 status_col4.metric("Classification", "Stub", help="Cell-type & health classifiers need a trained checkpoint")
 
-tab_analyze, tab_results, tab_correct = st.tabs(
-    ["\U0001f4c2 Analyze", "\U0001f4ca Results", "✏️ Mask Correction"]
-)
+tab_analyze, tab_results, tab_correct = st.tabs(["Analyze", "Results", "Mask Correction"])
 
 with tab_analyze:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -274,12 +263,7 @@ with tab_analyze:
 
     if st.button("Run analysis", type="primary", disabled=uploaded_file is None):
         if _get_model() is None:
-            st.warning(
-                f"No trained segmentation checkpoint found at `{CHECKPOINT_PATH}`. "
-                "Preprocessing and morphometrics are real, but segmentation needs a "
-                "checkpoint to run.",
-                icon="⚠️",
-            )
+            st.warning("No trained segmentation checkpoint found. Segmentation can't run without one.")
         else:
             try:
                 with st.spinner("Running preprocessing + segmentation..."):
@@ -292,17 +276,11 @@ with tab_analyze:
                         condition,
                         time_point,
                     )
-            except MitoMorphError as exc:
-                st.error(f"Analysis failed: {exc}", icon="🚫")
+            except Exception as exc:  # noqa: BLE001 — show a clean message, not a raw traceback
+                st.error(f"Analysis failed: {exc}")
             else:
                 n_regions = len(result["features"])
-                st.success(
-                    f"Segmentation complete — {n_regions} region(s) detected "
-                    "(confidence threshold 0.5). Saved as run "
-                    f"#{run_id} (see the Results tab). Cell-type classification and "
-                    "health scoring are still stubs pending further training data.",
-                    icon="✅",
-                )
+                st.success(f"{n_regions} region(s) detected. Saved as run #{run_id}.")
                 fig_col, stats_col = st.columns([2, 1])
                 with fig_col:
                     st.pyplot(_render_overlay(result["image"], result["mask"]))
@@ -315,11 +293,8 @@ with tab_analyze:
                         st.metric("Mean region area (px²)", f"{mean_area:.1f}")
                 if n_regions == 0:
                     st.info(
-                        "Zero regions detected is expected on fluorescence images: this "
-                        "checkpoint was trained on electron microscopy data (see the "
-                        "Segmentation status badge above), so its confidence stays below "
-                        "the 0.5 threshold on other imaging modalities.",
-                        icon="ℹ️",
+                        "Zero regions is expected on fluorescence images — this checkpoint "
+                        "was trained on electron microscopy data."
                     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -329,11 +304,7 @@ with tab_results:
     runs = _get_db().list_segmentation_runs()
 
     if not runs:
-        st.info(
-            "No analyses recorded yet. Run an analysis in the Analyze tab — results are "
-            "saved here automatically.",
-            icon="ℹ️",
-        )
+        st.info("No analyses recorded yet. Run an analysis in the Analyze tab first.")
     else:
         table = pd.DataFrame(
             [
@@ -378,10 +349,7 @@ with tab_correct:
     runs = _get_db().list_segmentation_runs()
 
     if not runs:
-        st.info(
-            "No segmentation runs to correct yet — run an analysis in the Analyze tab first.",
-            icon="ℹ️",
-        )
+        st.info("No segmentation runs to correct yet — run an analysis in the Analyze tab first.")
     else:
         run_by_id = {r["run_id"]: r for r in runs}
         selected_id = st.selectbox(
@@ -396,7 +364,7 @@ with tab_correct:
         region_ids = list(region_areas.keys())
 
         if not region_ids:
-            st.info("This run has no detected regions to correct.", icon="ℹ️")
+            st.info("This run has no detected regions to correct.")
         else:
             kept_ids = st.multiselect(
                 "Regions to keep (remove any false positives)",
@@ -417,7 +385,7 @@ with tab_correct:
                     selected["data_path"],
                     selected["overlay_path"],
                 )
-                st.success(f"Correction saved to run #{selected_id}.", icon="✅")
+                st.success(f"Correction saved to run #{selected_id}.")
                 st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 

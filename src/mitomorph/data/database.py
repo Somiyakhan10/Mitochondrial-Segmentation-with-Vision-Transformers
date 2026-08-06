@@ -51,7 +51,11 @@ class AnalysisDatabase:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(self.db_path))
+        # check_same_thread=False: callers that cache an AnalysisDatabase instance
+        # across reruns (e.g. Streamlit's st.cache_resource) may invoke it from a
+        # different thread than the one that created it. Streamlit reruns are
+        # sequential, not concurrent, so this is safe here.
+        self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(SCHEMA)
         self._conn.commit()
