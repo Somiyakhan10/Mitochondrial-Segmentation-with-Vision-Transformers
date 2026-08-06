@@ -93,7 +93,8 @@ until trained models or annotated lab data exist to build them against.
 |---|---|---|
 | `schema` | Real | §5.2 — `AnalysisResult` and related dataclasses |
 | `temporal` | Real | §1.3 — `TimeSeriesData` |
-| `database` | Real | FR-41 — SQLite-backed `AnalysisDatabase` |
+| `database` | Real | FR-41 — SQLite-backed `AnalysisDatabase` (`analyses` table for the full §5.2 schema; `segmentation_runs` table for what the dashboard can persist today) |
+| `segmentation_runs` | Real | Save/load `(image, labeled_mask)` artifacts per dashboard run |
 
 ## Integration (`mitomorph.integration`)
 

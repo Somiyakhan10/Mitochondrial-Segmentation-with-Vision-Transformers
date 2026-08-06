@@ -77,3 +77,55 @@ def test_insert_or_replace(tmp_path):
     db.insert(_make_result("A1", time_point="21 weeks"))
     assert db.get("A1").image_info.time_point == "21 weeks"
     db.close()
+
+
+def _segmentation_run_fields(**overrides) -> dict:
+    fields = {
+        "filename": "image.tif",
+        "animal_id": "M123",
+        "condition": "SCI",
+        "time_point": "6 weeks",
+        "region_count": 5,
+        "mean_area": 12.5,
+        "fragmentation_index": 0.001,
+        "mitochondrial_density": 0.05,
+        "overlay_path": "overlays/run1.png",
+        "data_path": "runs/run1.npz",
+    }
+    fields.update(overrides)
+    return fields
+
+
+def test_insert_and_get_segmentation_run(tmp_path):
+    db = AnalysisDatabase(tmp_path / "test.db")
+    run_id = db.insert_segmentation_run(**_segmentation_run_fields())
+    run = db.get_segmentation_run(run_id)
+    assert run["filename"] == "image.tif"
+    assert run["region_count"] == 5
+    assert run["corrected"] == 0
+    db.close()
+
+
+def test_get_segmentation_run_missing_returns_none(tmp_path):
+    db = AnalysisDatabase(tmp_path / "test.db")
+    assert db.get_segmentation_run(999) is None
+    db.close()
+
+
+def test_list_segmentation_runs_ordered_newest_first(tmp_path):
+    db = AnalysisDatabase(tmp_path / "test.db")
+    first_id = db.insert_segmentation_run(**_segmentation_run_fields(filename="first.tif"))
+    second_id = db.insert_segmentation_run(**_segmentation_run_fields(filename="second.tif"))
+    runs = db.list_segmentation_runs()
+    assert [r["run_id"] for r in runs] == [second_id, first_id]
+    db.close()
+
+
+def test_update_segmentation_run(tmp_path):
+    db = AnalysisDatabase(tmp_path / "test.db")
+    run_id = db.insert_segmentation_run(**_segmentation_run_fields())
+    db.update_segmentation_run(run_id, region_count=3, corrected=1)
+    run = db.get_segmentation_run(run_id)
+    assert run["region_count"] == 3
+    assert run["corrected"] == 1
+    db.close()

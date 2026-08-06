@@ -37,9 +37,22 @@ Every subcommand accepts `--config path/to/config.yaml` to override `config/defa
 streamlit run dashboard/app.py
 ```
 
-Opens a three-tab interface: **Analyze** (upload + run), **Results**
-(overview, once analyses exist), **Mask Correction** (manual segmentation
-editing, FR-13 — placeholder until implemented).
+Opens a three-tab interface, all real:
+- **Analyze** — upload an image, run real preprocessing + segmentation +
+  morphometrics (if a checkpoint is present), and automatically save the
+  run.
+- **Results** — lists every saved run (`mitomorph.data.database`'s
+  `segmentation_runs` table) with its overlay image and stats; select
+  one to view it in detail.
+- **Mask Correction** (FR-13) — pick a run, uncheck any false-positive
+  regions, preview the corrected overlay live, and save — this
+  recomputes morphometrics on the corrected mask and updates the saved
+  run (marked `corrected`).
+
+Note: Results/Mask Correction track segmentation + morphometrics output
+only (`segmentation_runs` table) — not the full §5.2
+`AnalysisResult`/`analyses` table, which also needs cell-type and health
+classification fields that are still stubs.
 
 ## Current state
 

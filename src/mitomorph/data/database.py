@@ -19,17 +19,41 @@ CREATE TABLE IF NOT EXISTS analyses (
     result_json TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS segmentation_runs (
+    run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    filename TEXT NOT NULL,
+    animal_id TEXT,
+    condition TEXT,
+    time_point TEXT,
+    region_count INTEGER NOT NULL,
+    mean_area REAL,
+    fragmentation_index REAL NOT NULL,
+    mitochondrial_density REAL NOT NULL,
+    overlay_path TEXT NOT NULL,
+    data_path TEXT NOT NULL,
+    corrected INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
 class AnalysisDatabase:
-    """Thin wrapper around a SQLite database of analysis results and metadata."""
+    """Thin wrapper around a SQLite database of analysis results and metadata.
+
+    ``segmentation_runs`` stores what the dashboard's Analyze tab can
+    actually produce today (segmentation + morphometrics only) — distinct
+    from ``analyses``/:class:`~mitomorph.data.schema.AnalysisResult`,
+    which mirrors the full SRS §5.2 schema (cell-type + health
+    classification included) and is populated once those stages are real.
+    """
 
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(str(self.db_path))
-        self._conn.execute(SCHEMA)
+        self._conn.row_factory = sqlite3.Row
+        self._conn.executescript(SCHEMA)
         self._conn.commit()
 
     def insert(self, result: AnalysisResult) -> None:
@@ -65,6 +89,39 @@ class AnalysisDatabase:
 
     def delete(self, analysis_id: str) -> None:
         self._conn.execute("DELETE FROM analyses WHERE analysis_id = ?", (analysis_id,))
+        self._conn.commit()
+
+    def insert_segmentation_run(self, **fields: object) -> int:
+        """Insert a segmentation-run record. Returns the new ``run_id``."""
+        columns = ", ".join(fields.keys())
+        placeholders = ", ".join("?" for _ in fields)
+        try:
+            cursor = self._conn.execute(
+                f"INSERT INTO segmentation_runs ({columns}) VALUES ({placeholders})",
+                tuple(fields.values()),
+            )
+            self._conn.commit()
+        except sqlite3.Error as exc:
+            raise DatabaseError(f"Failed to insert segmentation run: {exc}") from exc
+        return int(cursor.lastrowid)
+
+    def list_segmentation_runs(self) -> list[dict]:
+        # created_at has only second resolution, so run_id (monotonic) breaks ties deterministically.
+        rows = self._conn.execute(
+            "SELECT * FROM segmentation_runs ORDER BY created_at DESC, run_id DESC"
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_segmentation_run(self, run_id: int) -> dict | None:
+        row = self._conn.execute("SELECT * FROM segmentation_runs WHERE run_id = ?", (run_id,)).fetchone()
+        return dict(row) if row else None
+
+    def update_segmentation_run(self, run_id: int, **fields: object) -> None:
+        set_clause = ", ".join(f"{key} = ?" for key in fields)
+        self._conn.execute(
+            f"UPDATE segmentation_runs SET {set_clause} WHERE run_id = ?",
+            (*fields.values(), run_id),
+        )
         self._conn.commit()
 
     def close(self) -> None:
