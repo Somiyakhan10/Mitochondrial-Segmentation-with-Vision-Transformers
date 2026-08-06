@@ -7,6 +7,7 @@ real LIF sample is available to validate against.
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -67,7 +68,9 @@ def _load_tiff(path: Path) -> MicroscopyImage:
     except Exception as exc:
         raise ImageLoadError(f"Failed to read TIFF file {path}: {exc}") from exc
 
-    channel_names = _default_channel_names(axes, data.shape)
+    channel_names = _channel_names_from_ome(ome_xml, axes, data.shape) or _default_channel_names(
+        axes, data.shape
+    )
     metadata = {"ome_xml": ome_xml} if ome_xml else {}
     logger.debug("Loaded TIFF %s with axes=%s shape=%s", path, axes, data.shape)
     return MicroscopyImage(
@@ -104,3 +107,19 @@ def _default_channel_names(axes: str, shape: tuple[int, ...]) -> list[str]:
         return ["channel_0"]
     n_channels = shape[axes.index("C")]
     return [f"channel_{i}" for i in range(n_channels)]
+
+
+def _channel_names_from_ome(ome_xml: str | None, axes: str, shape: tuple[int, ...]) -> list[str] | None:
+    """Extract <Channel Name="..."> values from OME-XML metadata, if present and complete."""
+    if not ome_xml or "C" not in axes:
+        return None
+    n_channels = shape[axes.index("C")]
+    try:
+        root = ET.fromstring(ome_xml)
+    except ET.ParseError:
+        return None
+    names = [
+        elem.get("Name") for elem in root.iter() if elem.tag.endswith("}Channel") or elem.tag == "Channel"
+    ]
+    names = [n for n in names if n]
+    return names if len(names) == n_channels else None

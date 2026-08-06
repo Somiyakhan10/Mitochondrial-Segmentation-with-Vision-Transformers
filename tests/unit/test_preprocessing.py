@@ -21,6 +21,15 @@ def test_load_image_tiff(tmp_path):
     assert image.n_channels == 2
 
 
+def test_load_image_reads_channel_names_from_ome_metadata(tmp_path):
+    data = (np.random.rand(2, 32, 32) * 255).astype(np.uint8)
+    path = tmp_path / "sample.ome.tif"
+    tifffile.imwrite(str(path), data, metadata={"axes": "CYX", "Channel": {"Name": ["Tom20", "NeuN"]}})
+
+    image = load_image(path)
+    assert image.channel_names == ["Tom20", "NeuN"]
+
+
 def test_load_image_missing_file(tmp_path):
     with pytest.raises(ImageLoadError):
         load_image(tmp_path / "does_not_exist.tif")
