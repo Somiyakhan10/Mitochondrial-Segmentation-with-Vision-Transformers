@@ -30,4 +30,6 @@ def download_pretrained_weights(model_name: str, dest_dir: str | Path) -> Path:
     """
     if model_name not in MODEL_REGISTRY:
         raise ValueError(f"Unknown model '{model_name}'. Available: {list_available_models()}")
-    raise NotImplementedError(f"Download URL for '{model_name}' not yet configured; hosted weights pending (FR-10)")
+    raise NotImplementedError(
+        f"Download URL for '{model_name}' not yet configured; hosted weights pending (FR-10)"
+    )

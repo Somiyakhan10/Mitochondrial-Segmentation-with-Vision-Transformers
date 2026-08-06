@@ -10,7 +10,9 @@ from __future__ import annotations
 import numpy as np
 
 
-def non_local_means(image: np.ndarray, patch_size: int = 5, patch_distance: int = 6, h: float = 0.1) -> np.ndarray:
+def non_local_means(
+    image: np.ndarray, patch_size: int = 5, patch_distance: int = 6, h: float = 0.1
+) -> np.ndarray:
     """Denoise via non-local means (skimage.restoration.denoise_nl_means).
 
     Args:

@@ -17,7 +17,9 @@ DEFAULT_CONFIG = Path(__file__).resolve().parents[2] / "config" / "default_confi
 
 
 @click.group()
-@click.option("--config", "config_path", default=str(DEFAULT_CONFIG), show_default=True, help="Path to config YAML.")
+@click.option(
+    "--config", "config_path", default=str(DEFAULT_CONFIG), show_default=True, help="Path to config YAML."
+)
 @click.option("--log-dir", default=None, help="Directory for log files (console-only if omitted).")
 @click.pass_context
 def cli(ctx: click.Context, config_path: str, log_dir: str | None) -> None:
@@ -33,8 +35,10 @@ def cli(ctx: click.Context, config_path: str, log_dir: str | None) -> None:
 @click.option("--condition", "experimental_condition", required=True)
 @click.option("--time-point", required=True)
 @click.pass_context
-def analyze(ctx: click.Context, image_path: str, animal_id: str, experimental_condition: str, time_point: str) -> None:
-    """Run the full pipeline on a single image (FR-01–FR-40)."""
+def analyze(
+    ctx: click.Context, image_path: str, animal_id: str, experimental_condition: str, time_point: str
+) -> None:
+    """Run the full pipeline on a single image (FR-01 to FR-40)."""
     pipeline = MitoPipeline(ctx.obj["config_path"])
     metadata = {
         "animal_id": animal_id,

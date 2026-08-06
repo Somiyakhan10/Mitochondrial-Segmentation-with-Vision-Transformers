@@ -15,7 +15,9 @@ def get_training_transforms(config: dict[str, Any] | None = None):
     """Return a MONAI ``Compose`` of training-time augmentations
     (RandRotate90, RandFlip, Rand2DElastic, RandGaussianNoise, etc.).
     """
-    raise NotImplementedError("Augmentation strength needs tuning against real training images (FR-10, FR-11)")
+    raise NotImplementedError(
+        "Augmentation strength needs tuning against real training images (FR-10, FR-11)"
+    )
 
 
 def get_validation_transforms(config: dict[str, Any] | None = None):

@@ -61,7 +61,7 @@ class MitoPipeline:
         segmentation_result = segment(self.segmentation_model, normalized)
         mask = segmentation_result.mask
 
-        neuronal_labels = classify_neuronal(mask, image)
+        classify_neuronal(mask, image)
 
         features = extract_single_features(mask)
         validate_features(features)

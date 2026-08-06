@@ -5,7 +5,9 @@ from __future__ import annotations
 import numpy as np
 
 
-def correlate_with_respiratory_capacity(morphometric_features: np.ndarray, seahorse_ocr: np.ndarray) -> dict[str, float]:
+def correlate_with_respiratory_capacity(
+    morphometric_features: np.ndarray, seahorse_ocr: np.ndarray
+) -> dict[str, float]:
     """Correlate morphometric features with Seahorse oxygen consumption rate (OCR) measurements.
 
     Returns:

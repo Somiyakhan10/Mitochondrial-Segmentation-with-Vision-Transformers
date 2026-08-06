@@ -14,7 +14,9 @@ def log_run(run_name: str, params: dict[str, Any], metrics: dict[str, float]) ->
     Wraps ``mlflow.start_run()`` / ``log_param`` / ``log_metric``; deferred
     until a tracking URI is configured for the lab's environment.
     """
-    raise NotImplementedError("Wire up a configured MLflow tracking URI before logging real runs (NFR-05, NFR-06)")
+    raise NotImplementedError(
+        "Wire up a configured MLflow tracking URI before logging real runs (NFR-05, NFR-06)"
+    )
 
 
 def meets_targets(metrics: dict[str, float]) -> bool:

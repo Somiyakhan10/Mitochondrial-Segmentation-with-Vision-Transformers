@@ -38,7 +38,9 @@ def extract_single_features(mask: np.ndarray) -> list[SingleMitoFeatures]:
         perimeter = region.perimeter if region.perimeter > 0 else 1e-8
         circularity = 4 * np.pi * region.area / (perimeter**2)
         aspect_ratio = (
-            region.major_axis_length / region.minor_axis_length if region.minor_axis_length > 0 else float("nan")
+            region.major_axis_length / region.minor_axis_length
+            if region.minor_axis_length > 0
+            else float("nan")
         )
         features.append(
             SingleMitoFeatures(

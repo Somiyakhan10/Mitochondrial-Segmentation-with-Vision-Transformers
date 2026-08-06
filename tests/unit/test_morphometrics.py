@@ -3,7 +3,11 @@ from __future__ import annotations
 import numpy as np
 from skimage.draw import disk
 
-from mitomorph.morphometrics.dysfunction_indices import fragmentation_index, mitochondrial_density, swelling_score
+from mitomorph.morphometrics.dysfunction_indices import (
+    fragmentation_index,
+    mitochondrial_density,
+    swelling_score,
+)
 from mitomorph.morphometrics.quality_control import validate_features
 from mitomorph.morphometrics.single_features import extract_single_features
 

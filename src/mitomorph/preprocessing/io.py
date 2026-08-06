@@ -80,19 +80,23 @@ def _load_czi(path: Path) -> MicroscopyImage:
         from aicsimageio import AICSImage
     except ImportError as exc:
         raise ImageLoadError(
-            "Reading CZI files requires the optional 'aicsimageio' dependency (see requirements.txt)"
+            "Reading CZI files needs the optional 'aicsimageio' dependency: pip install aicsimageio==4.14.0"
         ) from exc
 
     try:
         img = AICSImage(str(path))
         axes = "CZYX" if img.dims.Z > 1 else "CYX"
         data = img.get_image_data(axes)
-        channel_names = list(img.channel_names) if img.channel_names else _default_channel_names(axes, data.shape)
+        channel_names = (
+            list(img.channel_names) if img.channel_names else _default_channel_names(axes, data.shape)
+        )
     except Exception as exc:
         raise ImageLoadError(f"Failed to read CZI file {path}: {exc}") from exc
 
     logger.debug("Loaded CZI %s with axes=%s shape=%s", path, axes, data.shape)
-    return MicroscopyImage(data=data, channel_names=channel_names, axes=axes, metadata={}, source_path=str(path))
+    return MicroscopyImage(
+        data=data, channel_names=channel_names, axes=axes, metadata={}, source_path=str(path)
+    )
 
 
 def _default_channel_names(axes: str, shape: tuple[int, ...]) -> list[str]:

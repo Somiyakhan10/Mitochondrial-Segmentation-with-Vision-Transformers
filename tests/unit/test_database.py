@@ -15,13 +15,22 @@ def _make_result(analysis_id: str, animal_id: str = "M123", time_point: str = "6
         analysis_id=analysis_id,
         image_info=ImageInfo(filename="m.tif", experiment="SCI", animal_id=animal_id, time_point=time_point),
         segmentation=SegmentationSummary(
-            total_mitochondria=10, neuronal_mitochondria=5, non_neuronal_mitochondria=5, segmentation_confidence=0.9
+            total_mitochondria=10,
+            neuronal_mitochondria=5,
+            non_neuronal_mitochondria=5,
+            segmentation_confidence=0.9,
         ),
         morphometric_summary=MorphometricSummary(
-            mean_area=1.0, mean_aspect_ratio=1.0, mean_circularity=1.0,
-            fragmentation_index=1.0, mitochondrial_density=1.0, network_size=1.0,
+            mean_area=1.0,
+            mean_aspect_ratio=1.0,
+            mean_circularity=1.0,
+            fragmentation_index=1.0,
+            mitochondrial_density=1.0,
+            network_size=1.0,
         ),
-        classification=ClassificationSummary(healthy=1, fragmented=1, swollen=1, dysfunctional=1, health_score=50.0),
+        classification=ClassificationSummary(
+            healthy=1, fragmented=1, swollen=1, dysfunctional=1, health_score=50.0
+        ),
     )
 
 
