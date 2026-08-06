@@ -33,12 +33,12 @@ until trained models or annotated lab data exist to build them against.
 |---|---|---|
 | `metrics` | Real | FR-14, NFR-05 — `iou_score()`, `dice_score()` |
 | `checkpoint` | Real | NFR-14 — `save_checkpoint()`, `load_checkpoint()`, `resume_training()` |
-| `models.unet` | Stub | FR-08 — `UNetResNet34` |
+| `models.unet` | Real | FR-08 — `UNetResNet34`. Trained checkpoint (`data/models/segmentation_unet.pt`, EPFL/Lucchi EM data, Val Dice 0.80/IoU 0.73) — not yet validated on fluorescence images |
 | `models.attention_unet` | Stub | FR-09 — `AttentionUNet` |
 | `augmentations` | Stub | FR-10, FR-11 — MONAI training/validation transforms |
 | `model_zoo` | Stub (registry is real) | FR-10 — `list_available_models()` real; `download_pretrained_weights()` stub |
-| `train` | Stub | FR-11 — fine-tuning entrypoint |
-| `infer` | Stub | FR-12 — `segment()` |
+| `train` | Stub | FR-11 — fine-tuning entrypoint (current checkpoint was trained externally, see docs/user_guide.md) |
+| `infer` | Real | FR-12 — `segment()`, `load_model()` |
 
 ## Cell type (`mitomorph.celltype`)
 

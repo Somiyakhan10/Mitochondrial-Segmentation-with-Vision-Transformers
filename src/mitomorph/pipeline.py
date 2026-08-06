@@ -20,11 +20,12 @@ from mitomorph.logger import get_logger
 from mitomorph.morphometrics.dysfunction_indices import fragmentation_index, mitochondrial_density
 from mitomorph.morphometrics.quality_control import validate_features
 from mitomorph.morphometrics.single_features import extract_single_features
+from mitomorph.preprocessing.channel_utils import extract_mitochondrial_channel
 from mitomorph.preprocessing.io import load_image
 from mitomorph.preprocessing.normalization import zscore_normalize
 from mitomorph.preprocessing.validators import validate_image, validate_metadata
 from mitomorph.preprocessing.zstack import max_intensity_projection
-from mitomorph.segmentation.infer import segment
+from mitomorph.segmentation.infer import load_model, segment
 
 logger = get_logger(__name__)
 
@@ -34,7 +35,17 @@ class MitoPipeline:
 
     def __init__(self, config_path: str | Path, segmentation_model: Any | None = None):
         self.config = load_config(config_path)
-        self.segmentation_model = segmentation_model
+        self.segmentation_model = segmentation_model or self._load_default_segmentation_model()
+
+    def _load_default_segmentation_model(self) -> Any | None:
+        checkpoint_path = Path(self.config["segmentation"]["checkpoint_path"])
+        if not checkpoint_path.exists():
+            logger.info(
+                "No segmentation checkpoint found at %s; segmentation stage is unavailable", checkpoint_path
+            )
+            return None
+        logger.info("Loading segmentation checkpoint from %s", checkpoint_path)
+        return load_model(checkpoint_path)
 
     def run(self, image_path: str | Path, metadata: dict[str, Any]) -> dict[str, Any]:
         """Run preprocessing -> segmentation -> cell-type -> morphometrics ->
@@ -55,7 +66,12 @@ class MitoPipeline:
         validate_image(image)
         validate_metadata(metadata)
 
-        projected = max_intensity_projection(image.data) if "Z" in image.axes else image.data
+        mito_channel = extract_mitochondrial_channel(image)
+        remaining_axes = image.axes.replace("C", "")
+        if "Z" in remaining_axes:
+            projected = max_intensity_projection(mito_channel, z_axis=remaining_axes.index("Z"))
+        else:
+            projected = mito_channel
         normalized = zscore_normalize(projected)
 
         segmentation_result = segment(self.segmentation_model, normalized)

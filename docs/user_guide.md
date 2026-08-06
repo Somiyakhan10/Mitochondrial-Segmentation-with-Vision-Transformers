@@ -43,12 +43,24 @@ editing, FR-13 — placeholder until implemented).
 
 ## Current state
 
-Most of the deep-learning stages (segmentation inference, health
-classification, XAI) are interface stubs — see [api_reference.md](api_reference.md)
-for exactly which modules are real vs. stub. Running `analyze`/`batch` today
-will get through image loading, validation, and preprocessing, then raise
-`NotImplementedError` at the segmentation stage. This is expected until a
-segmentation checkpoint is trained (see SRS §6, Phase 2–4).
+Segmentation is real if `data/models/segmentation_unet.pt` is present
+(gitignored — not committed). With it, `analyze`/`batch` will get through
+image loading, validation, preprocessing, segmentation, and morphometric
+feature extraction, then raise `NotImplementedError` at cell-type
+classification (the next stub stage). Without a checkpoint, it stops one
+stage earlier, at segmentation. See [api_reference.md](api_reference.md)
+for exactly which modules are real vs. stub.
+
+The current checkpoint was trained externally on Kaggle (GPU), using the
+`UNetResNet34` architecture in `segmentation/models/unet.py` against the
+public EPFL/Lucchi EM mitochondria dataset — Val Dice 0.80, Val IoU 0.73
+on that dataset's held-out test volume. It has **not** been validated on
+fluorescence microscopy images (Tom20/COX IV/MitoTracker), which is what
+this pipeline is actually built for — expect it to detect nothing on
+fluorescence input, since EM and fluorescence have very different
+intensity/texture statistics. Fine-tuning on real annotated lab data
+(`mitomorph train`, once that data exists) is what would make it usable
+for real analysis.
 
 ## Notebooks
 

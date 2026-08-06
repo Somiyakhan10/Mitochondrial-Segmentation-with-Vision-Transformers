@@ -8,13 +8,16 @@ the full requirements document this project implements.
 
 ## Status
 
-This is a **project scaffold**, not a trained pipeline. No lab
-data/annotations exist yet, so modules that don't depend on trained
-weights (image I/O, normalization, morphometric feature extraction,
-config, database, export, checkpointing) are implemented and tested;
-everything requiring a trained model or annotated data (segmentation
-inference, health classification, XAI, PDF/figure rendering) is a
-fully-typed stub that raises `NotImplementedError`. See
+Segmentation now runs on a real trained model: a U-Net/ResNet34
+(`data/models/segmentation_unet.pt`) trained on the EPFL/Lucchi
+hippocampus electron microscopy mitochondria dataset (Val Dice 0.80,
+Val IoU 0.73 on the held-out test volume). No lab-specific
+fluorescence data/annotations exist yet, so this checkpoint has not
+been validated against this pipeline's primary input modality — it's a
+proof that the train → predict → display path works end-to-end, not a
+validated detector for Tom20/COX IV/MitoTracker images. Cell-type
+classification, health classification, XAI, and reporting are still
+fully-typed stubs that raise `NotImplementedError`. See
 [docs/api_reference.md](docs/api_reference.md) for the real/stub status of
 every module.
 
@@ -38,7 +41,10 @@ streamlit run dashboard/app.py
 pytest
 ```
 
-See [docs/user_guide.md](docs/user_guide.md) for full CLI/dashboard usage.
+`data/models/` is gitignored (trained weights aren't committed) — if you
+have `segmentation_unet.pt`, place it there and the CLI/dashboard will
+pick it up automatically. See [docs/user_guide.md](docs/user_guide.md)
+for full CLI/dashboard usage.
 
 ## Project structure
 
