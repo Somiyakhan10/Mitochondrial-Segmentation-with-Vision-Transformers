@@ -329,72 +329,170 @@ with tab_analyze:
         "they don't change the detected regions, which depend only on the image."
     )
 
+    # =========================================================================
+    # DIAGNOSTIC "RUN ANALYSIS" BUTTON WITH FULL DEBUGGING
+    # =========================================================================
+
     if st.button("Run analysis", type="primary", disabled=uploaded_file is None):
-        if _get_model() is None:
-            st.warning("No trained segmentation checkpoint found. Segmentation can't run without one.")
-        else:
-            try:
-                with st.spinner("Running preprocessing + segmentation..."):
-                    result = _run_segmentation_preview(uploaded_file)
-                    run_id = _save_new_run(
-                        result["image"],
-                        result["labeled_mask"],
-                        uploaded_file.name,
-                        animal_id,
-                        condition,
-                        time_point,
-                    )
-            except Exception as exc:  # noqa: BLE001 — show a clean message, not a raw traceback
-                st.error(f"Analysis failed: {exc}")
+        st.divider()
+        st.subheader("🔍 Diagnostic Output")
+        
+        # Check 1: Did the button actually fire?
+        st.write("✅ Step 1: Button click detected")
+        
+        try:
+            # Check 2: Is the uploaded file accessible?
+            if uploaded_file is None:
+                st.warning("⚠️ Step 2: No file uploaded. Please upload an image first.")
+                st.stop()
             else:
-                n_regions = len(result["features"])
-                saved_label = ", ".join(filter(None, [animal_id or None, condition, time_point or None]))
-                st.success(f"{n_regions} region(s) detected. Saved as run #{run_id} ({saved_label}).")
-                fig_col, stats_col = st.columns([2, 1])
-                with fig_col:
-                    st.pyplot(_render_overlay(result["image"], result["mask"]))
-                with stats_col:
-                    st.metric("Detected regions", n_regions)
-                    st.metric("Fragmentation index", f"{result['fragmentation_index']:.3e}")
-                    st.metric("Mitochondrial density", f"{result['mitochondrial_density']:.4f}")
-                    if n_regions:
-                        mean_area = sum(f.area for f in result["features"]) / n_regions
-                        st.metric("Mean region area (px²)", f"{mean_area:.1f}")
-                if n_regions == 0:
-                    st.info(
-                        "Zero regions is expected on fluorescence images — this checkpoint "
-                        "was trained on electron microscopy data."
+                st.write(f"✅ Step 2: File detected — name: `{uploaded_file.name}`, size: `{uploaded_file.size}` bytes")
+            
+            # Check 3: Check if model exists
+            st.write("⏳ Step 3: Checking for trained model...")
+            if _get_model() is None:
+                st.warning("⚠️ No trained segmentation checkpoint found. Segmentation can't run without one.")
+                st.info("💡 To fix this, ensure `data/models/segmentation_unet.pt` exists.")
+                st.info("📥 You can download the model from your Kaggle training or Hugging Face.")
+                st.stop()
+            else:
+                st.write("✅ Step 3: Model found and loaded successfully")
+            
+            # Check 4: Can we read the OME-TIFF properly?
+            st.write("⏳ Step 4: Reading OME-TIFF file...")
+            import tifffile
+            import numpy as np
+            
+            # Reset file pointer if needed
+            uploaded_file.seek(0)
+            img = tifffile.imread(uploaded_file)
+            st.write(f"✅ Step 4: Image loaded successfully — shape: `{img.shape}`, dtype: `{img.dtype}`")
+            
+            # Check 5: Validate image
+            st.write("⏳ Step 5: Validating image...")
+            try:
+                validate_image(img)
+                st.write("✅ Step 5: Image validation passed")
+            except Exception as e:
+                st.error(f"❌ Image validation failed: {e}")
+                st.stop()
+            
+            # Check 6: Extract mitochondrial channel
+            st.write("⏳ Step 6: Extracting mitochondrial channel...")
+            try:
+                mito_channel = extract_mitochondrial_channel(img)
+                st.write(f"✅ Step 6: Channel extracted — shape: `{mito_channel.shape}`")
+            except Exception as e:
+                st.error(f"❌ Channel extraction failed: {e}")
+                st.stop()
+            
+            # Check 7: Normalize
+            st.write("⏳ Step 7: Normalizing image...")
+            try:
+                normalized = zscore_normalize(mito_channel)
+                st.write(f"✅ Step 7: Normalization complete — min: `{normalized.min():.3f}`, max: `{normalized.max():.3f}`")
+            except Exception as e:
+                st.error(f"❌ Normalization failed: {e}")
+                st.stop()
+            
+            # Check 8: Run actual segmentation
+            st.write("⏳ Step 8: Running segmentation model...")
+            try:
+                model = _get_model()
+                result = segment(model, normalized, confidence_threshold=0.5)
+                st.write(f"✅ Step 8: Segmentation complete — mask shape: `{result.mask.shape}`, confidence shape: `{result.confidence.shape}`")
+            except Exception as e:
+                st.error(f"❌ Segmentation failed: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+                st.stop()
+            
+            # Check 9: Label and extract features
+            st.write("⏳ Step 9: Labeling regions and extracting features...")
+            try:
+                from skimage.measure import label
+                labeled_mask = label(result.mask)
+                features = extract_single_features(result.mask)
+                total_area = float(normalized.shape[-2] * normalized.shape[-1])
+                st.write(f"✅ Step 9: Features extracted — `{len(features)}` regions detected")
+            except Exception as e:
+                st.error(f"❌ Feature extraction failed: {e}")
+                st.stop()
+            
+            # Check 10: Save results
+            st.write("⏳ Step 10: Saving results to database...")
+            try:
+                run_id = _save_new_run(
+                    mito_channel,
+                    labeled_mask,
+                    uploaded_file.name,
+                    animal_id,
+                    condition,
+                    time_point,
+                )
+                st.write(f"✅ Step 10: Results saved — Run ID: `{run_id}`")
+            except Exception as e:
+                st.error(f"❌ Database save failed: {e}")
+                st.stop()
+            
+            # ===== ALL CHECKS PASSED =====
+            st.success("🎉 All checks passed! Displaying results below...")
+            st.divider()
+            
+            # Display results
+            n_regions = len(features)
+            saved_label = ", ".join(filter(None, [animal_id or None, condition, time_point or None]))
+            st.success(f"{n_regions} region(s) detected. Saved as run #{run_id} ({saved_label}).")
+            
+            fig_col, stats_col = st.columns([2, 1])
+            with fig_col:
+                st.pyplot(_render_overlay(mito_channel, result.mask))
+            with stats_col:
+                st.metric("Detected regions", n_regions)
+                st.metric("Fragmentation index", f"{fragmentation_index(features, total_area):.3e}")
+                st.metric("Mitochondrial density", f"{mitochondrial_density(features, total_area):.4f}")
+                if n_regions:
+                    mean_area = sum(f.area for f in features) / n_regions
+                    st.metric("Mean region area (px²)", f"{mean_area:.1f}")
+            
+            # Confidence heatmap
+            st.markdown("##### Model confidence map")
+            st.caption(
+                "Raw per-pixel detection confidence (before the 0.5 threshold is applied). "
+                "Brighter areas are where the model is more confident it's looking at a "
+                "mitochondrion."
+            )
+            st.pyplot(_style_for_dark_theme(_render_confidence_heatmap(result["confidence"])))
+            
+            # Charts if enough regions
+            if n_regions >= 3:
+                chart_col1, chart_col2 = st.columns(2)
+                feature_df = _features_to_df(features)
+                with chart_col1:
+                    st.markdown("##### Region area distribution")
+                    st.pyplot(
+                        _style_for_dark_theme(
+                            plot_feature_histogram(feature_df["area"].tolist(), xlabel="area (px²)")
+                        )
                     )
-
-                st.markdown("##### Model confidence map")
-                st.caption(
-                    "Raw per-pixel detection confidence (before the 0.5 threshold is applied). "
-                    "Brighter areas are where the model is more confident it's looking at a "
-                    "mitochondrion."
+                with chart_col2:
+                    st.markdown("##### Region shape correlation (FR-37)")
+                    st.pyplot(
+                        _style_for_dark_theme(plot_feature_correlation(feature_df, "area", "circularity"))
+                    )
+            
+            if n_regions == 0:
+                st.info(
+                    "Zero regions is expected on fluorescence images — this checkpoint "
+                    "was trained on electron microscopy data."
                 )
-                st.pyplot(_style_for_dark_theme(_render_confidence_heatmap(result["confidence"])))
-
-                if n_regions >= 3:
-                    chart_col1, chart_col2 = st.columns(2)
-                    feature_df = _features_to_df(result["features"])
-                    with chart_col1:
-                        st.markdown("##### Region area distribution")
-                        st.pyplot(
-                            _style_for_dark_theme(
-                                plot_feature_histogram(feature_df["area"].tolist(), xlabel="area (px²)")
-                            )
-                        )
-                    with chart_col2:
-                        st.markdown("##### Region shape correlation (FR-37)")
-                        st.pyplot(
-                            _style_for_dark_theme(plot_feature_correlation(feature_df, "area", "circularity"))
-                        )
-
-                st.caption(
-                    "Note: re-analyzing the same image always produces the same detected "
-                    "regions and charts — the model is deterministic and only looks at pixel "
-                    "data. Animal ID/Condition/Time point change only the label saved with the run."
-                )
+                
+        except Exception as e:
+            st.error(f"❌ UNEXPECTED ERROR: {e}")
+            import traceback
+            st.code(traceback.format_exc())
+            st.warning("☝️ This is the error that's breaking your app. Fix this first.")
+    
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_results:
