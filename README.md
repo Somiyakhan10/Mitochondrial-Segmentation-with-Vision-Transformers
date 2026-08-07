@@ -39,8 +39,8 @@ interactive dashboard.
 
 **Analyze Tab**
 Upload a microscopy image and run automated segmentation. The interface
-displays the detected regions overlaid on the source image, live
-morphometric statistics 
+displays the detected regions overlaid on the source image, alongside
+live morphometric statistics and a per-pixel confidence heatmap.
 
 ![Analyze tab](docs/screenshots/analyze-tab.png)
 
@@ -123,14 +123,12 @@ streamlit run dashboard/app.py
 pytest
 ```
 
-A trained segmentation checkpoint is required for segmentation to run.
-`data/models/` is excluded from version control; place
-`segmentation_unet.pt` there and the CLI and dashboard will pick it up
-automatically. See [docs/user_guide.md](docs/user_guide.md) for complete
-usage instructions, including how to obtain a validation image/mask
-pair for the Validate tab.
-
-```
+A trained segmentation checkpoint (`data/models/segmentation_unet.pt`)
+is included in the repository so segmentation works out of the box —
+no separate download step required. See
+[docs/user_guide.md](docs/user_guide.md) for complete usage
+instructions, including how to obtain a validation image/mask pair for
+the Validate tab.
 
 ## Testing
 
