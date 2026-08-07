@@ -41,30 +41,26 @@ held-out test slice it achieves:
 ## Output
 
 
-**Analyze — upload and run segmentation**
+**Analyze Tab**
 Upload a microscopy image and run automated segmentation. The interface
 displays the detected regions overlaid on the source image, live
-morphometric statistics (region count, fragmentation index, mitochondrial
-density), a per-pixel model confidence heatmap, and shape-distribution
-charts.
+morphometric statistics 
 
 ![Analyze tab](docs/screenshots/analyze-tab.png)
 
-**Results — browse and compare saved runs**
+**Results Tab**
 Every analysis run is saved automatically and listed in a searchable
-table. Runs can be filtered by experimental condition, with automatically
-generated box-plot charts comparing morphometric metrics across
-conditions.
+table
 
 ![Results tab](docs/screenshots/results-tab.png)
 
-**Mask Correction — manual review**
+**Mask Correction Tab**
 Reject false-positive detections from an automated segmentation result,
 with a live preview of the corrected mask before saving.
 
 ![Mask Correction tab](docs/screenshots/mask-correction-tab.png)
 
-**Validate — accuracy against ground truth**
+**Validate Tab**
 Upload an image alongside a known ground-truth mask to compute Dice, IoU,
 precision, recall, and F1 scores, along with a pixel-level confusion
 matrix and a predicted-vs-ground-truth overlay.
@@ -89,10 +85,6 @@ matrix and a predicted-vs-ground-truth overlay.
 - **Persistent result storage** — every analysis run is saved to a local
   database with its overlay image and statistics for later review and
   cross-condition comparison.
-- **Quantitative validation tooling** — confusion matrix, Dice, IoU,
-  precision, recall, and F1 computed against user-supplied ground truth.
-- **Comparative visualization** — box-plot and scatter-plot charts for
-  comparing morphometric distributions across experimental conditions.
 
 ## Technology Stack
 
@@ -142,37 +134,7 @@ automatically. See [docs/user_guide.md](docs/user_guide.md) for complete
 usage instructions, including how to obtain a validation image/mask
 pair for the Validate tab.
 
-## Project Structure
-
 ```
-config/                  Default analysis parameters
-src/mitomorph/
-  preprocessing/          Image I/O, validation, channel identification, normalization
-  segmentation/            Model architecture, training, inference, checkpointing, metrics
-  celltype/                Neuronal vs. non-neuronal classification
-  morphometrics/           Shape feature extraction, dysfunction indices, quality control
-  classification/          Health classification, outcome prediction
-  xai/                     Model interpretability tooling
-  validation/               Cross-validation and performance tracking
-  reporting/                Figures, plots, data export
-  data/                    Result schema, persistent storage
-  integration/              External system interfaces
-  pipeline.py               Orchestrates the full analysis pipeline
-  cli.py                    Command-line interface
-dashboard/app.py          Interactive Streamlit application
-scripts/                  Utility and wrapper scripts
-notebooks/                 Tutorial notebooks
-tests/                     Unit and integration test suite
-docs/                      Technical documentation
-```
-
-## Documentation
-
-- [docs/user_guide.md](docs/user_guide.md) — installation, CLI reference,
-  and dashboard usage
-- [docs/api_reference.md](docs/api_reference.md) — module-by-module
-  implementation status
-- [docs/srs.md](docs/srs.md) — full technical requirements specification
 
 ## Roadmap
 
