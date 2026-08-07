@@ -25,10 +25,6 @@ deep learning segmentation model with a classical image-analysis
 pipeline, exposed through both a command-line interface and an
 interactive dashboard.
 
-The segmentation model is a U-Net with a ResNet-34 encoder, trained on
-the public EPFL/Lucchi electron microscopy mitochondria dataset. On a
-held-out test slice it achieves:
-
 | Metric | Score |
 |---|---|
 | Dice coefficient | 0.949 |
