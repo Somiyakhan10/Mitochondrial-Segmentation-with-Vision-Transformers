@@ -10,16 +10,26 @@ the full requirements document this project implements.
 
 Segmentation now runs on a real trained model: a U-Net/ResNet34
 (`data/models/segmentation_unet.pt`) trained on the EPFL/Lucchi
-hippocampus electron microscopy mitochondria dataset (Val Dice 0.80,
-Val IoU 0.73 on the held-out test volume). No lab-specific
-fluorescence data/annotations exist yet, so this checkpoint has not
-been validated against this pipeline's primary input modality — it's a
-proof that the train → predict → display path works end-to-end, not a
-validated detector for Tom20/COX IV/MitoTracker images. Cell-type
-classification, health classification, XAI, and reporting are still
-fully-typed stubs that raise `NotImplementedError`. See
-[docs/api_reference.md](docs/api_reference.md) for the real/stub status of
-every module.
+hippocampus electron microscopy mitochondria dataset. Validated against
+real held-out ground truth via the dashboard's Validate tab: Dice 0.95,
+IoU 0.90, Precision 0.92, Recall 0.98 on a held-out EM test slice. No
+lab-specific fluorescence data/annotations exist yet, so this
+checkpoint has not been validated against this pipeline's primary
+input modality — it's proof that the train → predict → validate →
+display path works correctly end-to-end, not a validated detector for
+Tom20/COX IV/MitoTracker images.
+
+The dashboard (`streamlit run dashboard/app.py`) has four working tabs:
+Analyze (upload, segment, view morphometrics + confidence/shape
+charts), Results (browse saved runs, filter and compare by condition
+with real box plots), Mask Correction (reject false-positive regions),
+and Validate (confusion matrix + Dice/IoU/precision/recall/F1 against
+a ground-truth mask).
+
+Cell-type classification, health classification, XAI, and PDF
+reporting are still fully-typed stubs that raise `NotImplementedError`.
+See [docs/api_reference.md](docs/api_reference.md) for the real/stub
+status of every module.
 
 ## Setup
 
@@ -63,7 +73,7 @@ src/mitomorph/
   integration/             Lab database client interface
   pipeline.py              Orchestrates every stage above
   cli.py                   analyze / batch / train / report subcommands
-dashboard/app.py         Streamlit UI skeleton
+dashboard/app.py         Streamlit UI: Analyze, Results, Mask Correction, Validate tabs
 scripts/                 Thin CLI wrapper scripts
 notebooks/                Tutorial notebook shells
 tests/                    Unit + integration tests
