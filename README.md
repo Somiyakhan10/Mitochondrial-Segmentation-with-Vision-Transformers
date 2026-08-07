@@ -132,21 +132,6 @@ pair for the Validate tab.
 
 ```
 
-## Roadmap
-
-The segmentation, morphometric analysis, result storage, comparison,
-and validation capabilities described above are fully implemented and
-tested. The following components are defined with complete interfaces
-but not yet implemented, pending additional annotated training data:
-
-- Cell-type classification (neuronal vs. non-neuronal)
-- Multi-category health classification and scoring
-- Model interpretability (explainability) tooling
-- Automated PDF report generation
-
-See [docs/api_reference.md](docs/api_reference.md) for the exact
-implementation status of every module.
-
 ## Testing
 
 ```bash
