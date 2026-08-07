@@ -83,7 +83,7 @@ until trained models or annotated lab data exist to build them against.
 | Module | Status | FR |
 |---|---|---|
 | `export` | Real | FR-43 — `to_csv()`, `to_excel()`, `to_json()` |
-| `figures` | Stub | FR-35–FR-37 |
+| `figures` | Real | FR-35–FR-37 — `plot_segmentation_overlay()`, `plot_condition_comparison()` (box/bar), `plot_feature_correlation()` (scatter); used by the dashboard |
 | `temporal_plots` | Stub | FR-38 |
 | `pdf_report` | Stub | FR-39 |
 

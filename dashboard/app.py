@@ -28,6 +28,7 @@ from mitomorph.preprocessing.channel_utils import extract_mitochondrial_channel
 from mitomorph.preprocessing.io import load_image
 from mitomorph.preprocessing.normalization import zscore_normalize
 from mitomorph.preprocessing.validators import validate_image
+from mitomorph.reporting.figures import plot_condition_comparison, plot_feature_correlation
 from mitomorph.segmentation.infer import load_model, segment
 
 st.set_page_config(page_title="MitoMorph", layout="wide")
@@ -96,6 +97,35 @@ def _render_overlay(image_arr: np.ndarray, mask: np.ndarray):
     fig.patch.set_alpha(0.0)
     fig.tight_layout(pad=0)
     return fig
+
+
+def _style_for_dark_theme(fig: plt.Figure) -> plt.Figure:
+    """Recolor a matplotlib figure's axes/text to read well on the dashboard's dark background."""
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.tick_params(colors="#A8A4C0")
+        ax.xaxis.label.set_color("#EDEBF7")
+        ax.yaxis.label.set_color("#EDEBF7")
+        ax.title.set_color("#EDEBF7")
+        for spine in ax.spines.values():
+            spine.set_color("#332F4A")
+    return fig
+
+
+def _features_to_df(features) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "area": f.area,
+                "perimeter": f.perimeter,
+                "circularity": f.circularity,
+                "aspect_ratio": f.aspect_ratio,
+                "solidity": f.solidity,
+            }
+            for f in features
+        ]
+    )
 
 
 def _compute_stats(image: np.ndarray, labeled_mask: np.ndarray) -> dict:
@@ -301,6 +331,12 @@ with tab_analyze:
                         "Zero regions is expected on fluorescence images — this checkpoint "
                         "was trained on electron microscopy data."
                     )
+                elif n_regions >= 3:
+                    st.markdown("##### Region shape correlation (FR-37)")
+                    feature_df = _features_to_df(result["features"])
+                    st.pyplot(
+                        _style_for_dark_theme(plot_feature_correlation(feature_df, "area", "circularity"))
+                    )
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_results:
@@ -341,28 +377,31 @@ with tab_results:
 
             conditions_present = sorted({r["condition"] for r in filtered_runs if r["condition"]})
             if len(conditions_present) >= 2:
-                st.markdown("##### Comparison across conditions")
-                comparison = (
-                    pd.DataFrame(
-                        [
-                            {
-                                "Condition": r["condition"],
-                                "Regions": r["region_count"],
-                                "Fragmentation index": r["fragmentation_index"],
-                                "Mitochondrial density": r["mitochondrial_density"],
-                            }
-                            for r in filtered_runs
-                            if r["condition"]
-                        ]
-                    )
-                    .groupby("Condition")
-                    .mean(numeric_only=True)
+                st.markdown("##### Comparison across conditions (FR-36)")
+                comparison_df = pd.DataFrame(
+                    [
+                        {
+                            "Condition": r["condition"],
+                            "Regions": r["region_count"],
+                            "Fragmentation index": r["fragmentation_index"],
+                            "Mitochondrial density": r["mitochondrial_density"],
+                        }
+                        for r in filtered_runs
+                        if r["condition"]
+                    ]
                 )
                 chart_cols = st.columns(3)
-                for chart_col, metric in zip(chart_cols, comparison.columns):
+                for chart_col, metric in zip(
+                    chart_cols, ["Regions", "Fragmentation index", "Mitochondrial density"]
+                ):
                     with chart_col:
-                        st.caption(metric)
-                        st.bar_chart(comparison[metric])
+                        st.pyplot(
+                            _style_for_dark_theme(
+                                plot_condition_comparison(
+                                    comparison_df, metric, groupby="Condition", kind="box"
+                                )
+                            )
+                        )
 
             run_by_id = {r["run_id"]: r for r in filtered_runs}
             selected_id = st.selectbox(
@@ -380,6 +419,16 @@ with tab_results:
                 st.metric("Fragmentation index", f"{selected['fragmentation_index']:.4f}")
                 st.metric("Mitochondrial density", f"{selected['mitochondrial_density']:.4f}")
                 st.metric("Mean region area (px²)", f"{selected['mean_area']:.1f}")
+
+            selected_image, selected_labeled_mask = load_run_artifacts(selected["data_path"])
+            selected_features = extract_single_features(selected_labeled_mask > 0)
+            if len(selected_features) >= 3:
+                st.markdown("##### Region shape correlation (FR-37)")
+                st.pyplot(
+                    _style_for_dark_theme(
+                        plot_feature_correlation(_features_to_df(selected_features), "area", "circularity")
+                    )
+                )
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_correct:
@@ -438,12 +487,12 @@ with st.sidebar:
     st.markdown("### Pipeline status")
     st.markdown(
         '<span class="badge badge-live">Live</span>&nbsp; Preprocessing, segmentation, '
-        "morphometrics, run persistence, mask correction",
+        "morphometrics, run persistence, mask correction, comparison figures",
         unsafe_allow_html=True,
     )
     st.markdown(
         '<span class="badge badge-stub">Stub</span>&nbsp; Cell-type & health '
-        "classification, XAI, reporting",
+        "classification, XAI, PDF reports",
         unsafe_allow_html=True,
     )
     if CHECKPOINT_PATH.exists():
