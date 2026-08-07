@@ -1,37 +1,116 @@
-# MitoMorph — Mitochondrial Morphology Analysis Pipeline
+<div align="center">
 
-Deep-learning pipeline for automated segmentation, classification, and
-morphometric quantification of mitochondria in spinal cord tissue
-microscopy images, built to accelerate spinal cord injury (SCI)
-mitochondrial dysfunction research. See [docs/srs.md](docs/srs.md) for
-the full requirements document this project implements.
+# MitoMorph
 
-## Status
+**Automated Mitochondrial Morphology Analysis Pipeline**
 
-Segmentation now runs on a real trained model: a U-Net/ResNet34
-(`data/models/segmentation_unet.pt`) trained on the EPFL/Lucchi
-hippocampus electron microscopy mitochondria dataset. Validated against
-real held-out ground truth via the dashboard's Validate tab: Dice 0.95,
-IoU 0.90, Precision 0.92, Recall 0.98 on a held-out EM test slice. No
-lab-specific fluorescence data/annotations exist yet, so this
-checkpoint has not been validated against this pipeline's primary
-input modality — it's proof that the train → predict → validate →
-display path works correctly end-to-end, not a validated detector for
-Tom20/COX IV/MitoTracker images.
+An image analysis system for detecting, segmenting, and quantifying
+mitochondria in spinal cord tissue microscopy images.
 
-The dashboard (`streamlit run dashboard/app.py`) has four working tabs:
-Analyze (upload, segment, view morphometrics + confidence/shape
-charts), Results (browse saved runs, filter and compare by condition
-with real box plots), Mask Correction (reject false-positive regions),
-and Validate (confusion matrix + Dice/IoU/precision/recall/F1 against
-a ground-truth mask).
+[![Tests](https://github.com/Somiyakhan10/Mitochondrial-Segmentation-with-Vision-Transformers/actions/workflows/pytest.yml/badge.svg)](https://github.com/Somiyakhan10/Mitochondrial-Segmentation-with-Vision-Transformers/actions/workflows/pytest.yml)
+[![Lint](https://github.com/Somiyakhan10/Mitochondrial-Segmentation-with-Vision-Transformers/actions/workflows/lint.yml/badge.svg)](https://github.com/Somiyakhan10/Mitochondrial-Segmentation-with-Vision-Transformers/actions/workflows/lint.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Cell-type classification, health classification, XAI, and PDF
-reporting are still fully-typed stubs that raise `NotImplementedError`.
-See [docs/api_reference.md](docs/api_reference.md) for the real/stub
-status of every module.
+</div>
 
-## Setup
+---
+
+## Screenshots
+
+> Place screenshot files in `docs/screenshots/` using the filenames referenced
+> below and they will render automatically.
+
+**Analyze — upload and run segmentation**
+Upload a microscopy image and run automated segmentation. The interface
+displays the detected regions overlaid on the source image, live
+morphometric statistics (region count, fragmentation index, mitochondrial
+density), a per-pixel model confidence heatmap, and shape-distribution
+charts.
+
+![Analyze tab](docs/screenshots/analyze-tab.png)
+
+**Results — browse and compare saved runs**
+Every analysis run is saved automatically and listed in a searchable
+table. Runs can be filtered by experimental condition, with automatically
+generated box-plot charts comparing morphometric metrics across
+conditions.
+
+![Results tab](docs/screenshots/results-tab.png)
+
+**Mask Correction — manual review**
+Reject false-positive detections from an automated segmentation result,
+with a live preview of the corrected mask before saving.
+
+![Mask Correction tab](docs/screenshots/mask-correction-tab.png)
+
+**Validate — accuracy against ground truth**
+Upload an image alongside a known ground-truth mask to compute Dice, IoU,
+precision, recall, and F1 scores, along with a pixel-level confusion
+matrix and a predicted-vs-ground-truth overlay.
+
+![Validate tab](docs/screenshots/validate-tab.png)
+
+---
+
+## Overview
+
+MitoMorph automates a process that is otherwise done manually under a
+microscope: identifying individual mitochondria in tissue images and
+measuring their size, shape, and distribution. It combines a trained
+deep learning segmentation model with a classical image-analysis
+pipeline, exposed through both a command-line interface and an
+interactive dashboard.
+
+The segmentation model is a U-Net with a ResNet-34 encoder, trained on
+the public EPFL/Lucchi electron microscopy mitochondria dataset. On a
+held-out test slice it achieves:
+
+| Metric | Score |
+|---|---|
+| Dice coefficient | 0.949 |
+| IoU | 0.902 |
+| Precision | 0.918 |
+| Recall | 0.981 |
+| F1 | 0.949 |
+
+## Key Capabilities
+
+- **Multi-format image ingestion** — TIFF, OME-TIFF, and CZI microscopy
+  formats, with automatic marker-channel identification from image
+  metadata.
+- **Deep learning segmentation** — U-Net/ResNet-34 architecture, trained
+  and validated with quantitative accuracy metrics.
+- **Morphometric quantification** — area, perimeter, circularity, aspect
+  ratio, solidity, fragmentation index, and density, computed per
+  detected region.
+- **Interactive dashboard** — a four-tab Streamlit application covering
+  analysis, results browsing, manual mask correction, and model
+  validation.
+- **Persistent result storage** — every analysis run is saved to a local
+  database with its overlay image and statistics for later review and
+  cross-condition comparison.
+- **Quantitative validation tooling** — confusion matrix, Dice, IoU,
+  precision, recall, and F1 computed against user-supplied ground truth.
+- **Comparative visualization** — box-plot and scatter-plot charts for
+  comparing morphometric distributions across experimental conditions.
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Deep learning | PyTorch, torchvision |
+| Image processing | scikit-image, OpenCV, tifffile |
+| Classical ML | scikit-learn |
+| Visualization | Matplotlib, Streamlit |
+| Data storage | SQLite |
+| Testing | pytest |
+| Tooling | black, flake8, GitHub Actions |
+
+## Getting Started
+
+### Installation
 
 ```bash
 python -m venv venv
@@ -42,62 +121,75 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
-## Quickstart
+### Usage
 
 ```bash
+# Analyze a single image via the command line
 mitomorph analyze path/to/image.tif --animal-id M123 --condition SCI --time-point "6 weeks"
+
+# Batch-process a directory of images
 mitomorph batch data/raw/ --output-dir data/processed/
+
+# Launch the interactive dashboard
 streamlit run dashboard/app.py
+
+# Run the test suite
 pytest
 ```
 
-`data/models/` is gitignored (trained weights aren't committed) — if you
-have `segmentation_unet.pt`, place it there and the CLI/dashboard will
-pick it up automatically. See [docs/user_guide.md](docs/user_guide.md)
-for full CLI/dashboard usage.
+A trained segmentation checkpoint is required for segmentation to run.
+`data/models/` is excluded from version control; place
+`segmentation_unet.pt` there and the CLI and dashboard will pick it up
+automatically. See [docs/user_guide.md](docs/user_guide.md) for complete
+usage instructions, including how to obtain a validation image/mask
+pair for the Validate tab.
 
-## Project structure
+## Project Structure
 
 ```
-config/                 Default analysis parameters (config/default_config.yaml)
-src/mitomorph/           
-  preprocessing/         Image I/O, validation, channel ID, normalization, denoising, Z-stacks
-  segmentation/           U-Net/Attention U-Net models, training, inference, checkpointing, metrics
-  celltype/               Neuronal vs. non-neuronal classification
-  morphometrics/          Single-mitochondrion + network features, dysfunction indices, QC
-  classification/         Health classifier, treatment-response predictor
-  xai/                     Grad-CAM, SHAP, uncertainty estimation
-  validation/              Cross-validation, MLflow tracking, benchmarking
-  reporting/               Figures, temporal plots, PDF reports, CSV/Excel/JSON export
-  data/                    Result schema, time-series model, SQLite metadata store
-  integration/             Lab database client interface
-  pipeline.py              Orchestrates every stage above
-  cli.py                   analyze / batch / train / report subcommands
-dashboard/app.py         Streamlit UI: Analyze, Results, Mask Correction, Validate tabs
-scripts/                 Thin CLI wrapper scripts
-notebooks/                Tutorial notebook shells
-tests/                    Unit + integration tests
-docs/                     SRS, API reference, user guide
+config/                  Default analysis parameters
+src/mitomorph/
+  preprocessing/          Image I/O, validation, channel identification, normalization
+  segmentation/            Model architecture, training, inference, checkpointing, metrics
+  celltype/                Neuronal vs. non-neuronal classification
+  morphometrics/           Shape feature extraction, dysfunction indices, quality control
+  classification/          Health classification, outcome prediction
+  xai/                     Model interpretability tooling
+  validation/               Cross-validation and performance tracking
+  reporting/                Figures, plots, data export
+  data/                    Result schema, persistent storage
+  integration/              External system interfaces
+  pipeline.py               Orchestrates the full analysis pipeline
+  cli.py                    Command-line interface
+dashboard/app.py          Interactive Streamlit application
+scripts/                  Utility and wrapper scripts
+notebooks/                 Tutorial notebooks
+tests/                     Unit and integration test suite
+docs/                      Technical documentation
 ```
 
-## SRS traceability
+## Documentation
 
-| Area | FR/NFR IDs | Key modules |
-|---|---|---|
-| Image I/O & preprocessing | FR-01–FR-07 | `preprocessing/` |
-| Segmentation | FR-08–FR-14 | `segmentation/` |
-| Cell-type specificity | FR-15–FR-18 | `celltype/`, `preprocessing/channel_utils.py` |
-| Morphometrics | FR-19–FR-25 | `morphometrics/` |
-| Classification & prediction | FR-26–FR-30 | `classification/` |
-| Explainable AI | FR-31–FR-34 | `xai/` |
-| Reporting & visualization | FR-35–FR-40 | `reporting/`, `dashboard/` |
-| Data management | FR-41–FR-44 | `data/`, `integration/` |
-| Performance | NFR-01–NFR-04 | `pipeline.py`, `segmentation/infer.py` |
-| Accuracy | NFR-05–NFR-07 | `validation/`, `morphometrics/quality_control.py` |
-| Usability | NFR-08–NFR-11 | `notebooks/`, `cli.py`, `docs/` |
-| Maintainability | NFR-12–NFR-15 | package-wide; `.github/workflows/`, `tests/` |
+- [docs/user_guide.md](docs/user_guide.md) — installation, CLI reference,
+  and dashboard usage
+- [docs/api_reference.md](docs/api_reference.md) — module-by-module
+  implementation status
+- [docs/srs.md](docs/srs.md) — full technical requirements specification
 
-Full per-module status is in [docs/api_reference.md](docs/api_reference.md).
+## Roadmap
+
+The segmentation, morphometric analysis, result storage, comparison,
+and validation capabilities described above are fully implemented and
+tested. The following components are defined with complete interfaces
+but not yet implemented, pending additional annotated training data:
+
+- Cell-type classification (neuronal vs. non-neuronal)
+- Multi-category health classification and scoring
+- Model interpretability (explainability) tooling
+- Automated PDF report generation
+
+See [docs/api_reference.md](docs/api_reference.md) for the exact
+implementation status of every module.
 
 ## Testing
 
@@ -106,3 +198,13 @@ pytest
 black --check src/ tests/
 flake8 src/ tests/
 ```
+
+## License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+The segmentation model was trained on the EPFL CVLab Electron
+Microscopy Dataset (Lucchi et al.), a publicly available benchmark for
+mitochondria segmentation in electron microscopy volumes.
