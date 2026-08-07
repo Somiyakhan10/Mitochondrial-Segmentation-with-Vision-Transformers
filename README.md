@@ -16,44 +16,6 @@ mitochondria in spinal cord tissue microscopy images.
 </div>
 
 ---
-
-## Screenshots
-
-> Place screenshot files in `docs/screenshots/` using the filenames referenced
-> below and they will render automatically.
-
-**Analyze — upload and run segmentation**
-Upload a microscopy image and run automated segmentation. The interface
-displays the detected regions overlaid on the source image, live
-morphometric statistics (region count, fragmentation index, mitochondrial
-density), a per-pixel model confidence heatmap, and shape-distribution
-charts.
-
-![Analyze tab](docs/screenshots/analyze-tab.png)
-
-**Results — browse and compare saved runs**
-Every analysis run is saved automatically and listed in a searchable
-table. Runs can be filtered by experimental condition, with automatically
-generated box-plot charts comparing morphometric metrics across
-conditions.
-
-![Results tab](docs/screenshots/results-tab.png)
-
-**Mask Correction — manual review**
-Reject false-positive detections from an automated segmentation result,
-with a live preview of the corrected mask before saving.
-
-![Mask Correction tab](docs/screenshots/mask-correction-tab.png)
-
-**Validate — accuracy against ground truth**
-Upload an image alongside a known ground-truth mask to compute Dice, IoU,
-precision, recall, and F1 scores, along with a pixel-level confusion
-matrix and a predicted-vs-ground-truth overlay.
-
-![Validate tab](docs/screenshots/validate-tab.png)
-
----
-
 ## Overview
 
 MitoMorph automates a process that is otherwise done manually under a
@@ -63,10 +25,6 @@ deep learning segmentation model with a classical image-analysis
 pipeline, exposed through both a command-line interface and an
 interactive dashboard.
 
-The segmentation model is a U-Net with a ResNet-34 encoder, trained on
-the public EPFL/Lucchi electron microscopy mitochondria dataset. On a
-held-out test slice it achieves:
-
 | Metric | Score |
 |---|---|
 | Dice coefficient | 0.949 |
@@ -74,6 +32,38 @@ held-out test slice it achieves:
 | Precision | 0.918 |
 | Recall | 0.981 |
 | F1 | 0.949 |
+
+---
+## Output
+
+
+**Analyze Tab**
+Upload a microscopy image and run automated segmentation. The interface
+displays the detected regions overlaid on the source image, live
+morphometric statistics 
+
+![Analyze tab](docs/screenshots/analyze-tab.png)
+
+**Results Tab**
+Every analysis run is saved automatically and listed in a searchable
+table
+
+![Results tab](docs/screenshots/results-tab.png)
+
+**Mask Correction Tab**
+Reject false-positive detections from an automated segmentation result,
+with a live preview of the corrected mask before saving.
+
+![Mask Correction tab](docs/screenshots/mask-correction-tab.png)
+
+**Validate Tab**
+Upload an image alongside a known ground-truth mask to compute Dice, IoU,
+precision, recall, and F1 scores, along with a pixel-level confusion
+matrix and a predicted-vs-ground-truth overlay.
+
+![Validate tab](docs/screenshots/validate-tab.png)
+
+---
 
 ## Key Capabilities
 
@@ -91,10 +81,6 @@ held-out test slice it achieves:
 - **Persistent result storage** — every analysis run is saved to a local
   database with its overlay image and statistics for later review and
   cross-condition comparison.
-- **Quantitative validation tooling** — confusion matrix, Dice, IoU,
-  precision, recall, and F1 computed against user-supplied ground truth.
-- **Comparative visualization** — box-plot and scatter-plot charts for
-  comparing morphometric distributions across experimental conditions.
 
 ## Technology Stack
 
@@ -144,52 +130,7 @@ automatically. See [docs/user_guide.md](docs/user_guide.md) for complete
 usage instructions, including how to obtain a validation image/mask
 pair for the Validate tab.
 
-## Project Structure
-
 ```
-config/                  Default analysis parameters
-src/mitomorph/
-  preprocessing/          Image I/O, validation, channel identification, normalization
-  segmentation/            Model architecture, training, inference, checkpointing, metrics
-  celltype/                Neuronal vs. non-neuronal classification
-  morphometrics/           Shape feature extraction, dysfunction indices, quality control
-  classification/          Health classification, outcome prediction
-  xai/                     Model interpretability tooling
-  validation/               Cross-validation and performance tracking
-  reporting/                Figures, plots, data export
-  data/                    Result schema, persistent storage
-  integration/              External system interfaces
-  pipeline.py               Orchestrates the full analysis pipeline
-  cli.py                    Command-line interface
-dashboard/app.py          Interactive Streamlit application
-scripts/                  Utility and wrapper scripts
-notebooks/                 Tutorial notebooks
-tests/                     Unit and integration test suite
-docs/                      Technical documentation
-```
-
-## Documentation
-
-- [docs/user_guide.md](docs/user_guide.md) — installation, CLI reference,
-  and dashboard usage
-- [docs/api_reference.md](docs/api_reference.md) — module-by-module
-  implementation status
-- [docs/srs.md](docs/srs.md) — full technical requirements specification
-
-## Roadmap
-
-The segmentation, morphometric analysis, result storage, comparison,
-and validation capabilities described above are fully implemented and
-tested. The following components are defined with complete interfaces
-but not yet implemented, pending additional annotated training data:
-
-- Cell-type classification (neuronal vs. non-neuronal)
-- Multi-category health classification and scoring
-- Model interpretability (explainability) tooling
-- Automated PDF report generation
-
-See [docs/api_reference.md](docs/api_reference.md) for the exact
-implementation status of every module.
 
 ## Testing
 
