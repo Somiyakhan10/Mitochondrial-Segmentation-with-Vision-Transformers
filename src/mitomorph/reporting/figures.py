@@ -77,3 +77,55 @@ def plot_feature_correlation(
     if save_path:
         fig.savefig(save_path, dpi=120)
     return fig
+
+
+def plot_feature_histogram(
+    values, xlabel: str, bins: int = 15, save_path: str | Path | None = None
+) -> plt.Figure:
+    """Histogram of a single morphometric feature's distribution across detected regions."""
+    fig, ax = plt.subplots(figsize=(5, 4))
+    ax.hist(values, bins=min(bins, max(3, len(values))), color="#8C7AE6", edgecolor="white", linewidth=0.5)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("Count")
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=120)
+    return fig
+
+
+def plot_confusion_matrix(confusion: dict[str, int], save_path: str | Path | None = None) -> plt.Figure:
+    """Render a 2x2 pixel-level confusion matrix (predicted vs. ground truth) as a heatmap.
+
+    Args:
+        confusion: dict with keys ``tp``, ``fp``, ``fn``, ``tn`` (see
+            :func:`mitomorph.segmentation.metrics.confusion_matrix`).
+    """
+    matrix = np.array([[confusion["tp"], confusion["fn"]], [confusion["fp"], confusion["tn"]]])
+
+    fig, ax = plt.subplots(figsize=(4.5, 4.5))
+    im = ax.imshow(matrix, cmap="Purples")
+    cell_labels = [["TP", "FN"], ["FP", "TN"]]
+    for i in range(2):
+        for j in range(2):
+            text_color = "white" if matrix[i, j] > matrix.max() / 2 else "black"
+            ax.text(
+                j,
+                i,
+                f"{cell_labels[i][j]}\n{matrix[i, j]:,}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=11,
+                fontweight="bold",
+            )
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(["Positive", "Negative"])
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(["Positive", "Negative"])
+    ax.set_xlabel("Ground truth")
+    ax.set_ylabel("Predicted")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=120)
+    return fig

@@ -6,7 +6,9 @@ import pytest
 
 from mitomorph.reporting.figures import (
     plot_condition_comparison,
+    plot_confusion_matrix,
     plot_feature_correlation,
+    plot_feature_histogram,
     plot_segmentation_overlay,
 )
 
@@ -67,3 +69,25 @@ def test_plot_feature_correlation_missing_column_raises():
     data = pd.DataFrame({"area": [1.0, 2.0]})
     with pytest.raises(ValueError):
         plot_feature_correlation(data, "area", "circularity")
+
+
+def test_plot_feature_histogram_returns_figure():
+    fig = plot_feature_histogram([1.0, 2.0, 2.5, 3.0, 3.2, 5.0], xlabel="area")
+    assert len(fig.axes) == 1
+
+
+def test_plot_feature_histogram_saves_file(tmp_path):
+    path = tmp_path / "hist.png"
+    plot_feature_histogram([1.0, 2.0, 3.0], xlabel="area", save_path=path)
+    assert path.exists()
+
+
+def test_plot_confusion_matrix_returns_figure():
+    fig = plot_confusion_matrix({"tp": 10, "fp": 2, "fn": 3, "tn": 100})
+    assert len(fig.axes) == 2  # heatmap axis + colorbar axis
+
+
+def test_plot_confusion_matrix_saves_file(tmp_path):
+    path = tmp_path / "cm.png"
+    plot_confusion_matrix({"tp": 5, "fp": 1, "fn": 1, "tn": 20}, save_path=path)
+    assert path.exists()

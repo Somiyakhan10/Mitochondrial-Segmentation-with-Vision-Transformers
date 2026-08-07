@@ -31,7 +31,7 @@ until trained models or annotated lab data exist to build them against.
 
 | Module | Status | FR |
 |---|---|---|
-| `metrics` | Real | FR-14, NFR-05 — `iou_score()`, `dice_score()` |
+| `metrics` | Real | FR-14, NFR-05/06 — `iou_score()`, `dice_score()`, `confusion_matrix()`, `precision_score()`, `recall_score()`, `f1_score()` |
 | `checkpoint` | Real | NFR-14 — `save_checkpoint()`, `load_checkpoint()`, `resume_training()` |
 | `models.unet` | Real | FR-08 — `UNetResNet34`. Trained checkpoint (`data/models/segmentation_unet.pt`, EPFL/Lucchi EM data, Val Dice 0.80/IoU 0.73) — not yet validated on fluorescence images |
 | `models.attention_unet` | Stub | FR-09 — `AttentionUNet` |
@@ -83,7 +83,7 @@ until trained models or annotated lab data exist to build them against.
 | Module | Status | FR |
 |---|---|---|
 | `export` | Real | FR-43 — `to_csv()`, `to_excel()`, `to_json()` |
-| `figures` | Real | FR-35–FR-37 — `plot_segmentation_overlay()`, `plot_condition_comparison()` (box/bar), `plot_feature_correlation()` (scatter); used by the dashboard |
+| `figures` | Real | FR-35–FR-37 — `plot_segmentation_overlay()`, `plot_condition_comparison()` (box/bar), `plot_feature_correlation()` (scatter), `plot_feature_histogram()`, `plot_confusion_matrix()`; used by the dashboard |
 | `temporal_plots` | Stub | FR-38 |
 | `pdf_report` | Stub | FR-39 |
 

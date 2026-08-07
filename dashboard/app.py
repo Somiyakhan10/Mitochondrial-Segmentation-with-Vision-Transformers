@@ -2,14 +2,16 @@
 
 Page structure, styling, upload widget, section layout, the
 segmentation + morphometrics preview, run persistence (Results tab),
-and region-level mask correction (Mask Correction tab) are all real (a
-trained checkpoint is loaded from data/models/segmentation_unet.pt if
-present). Cell-type classification and health scoring are still stubs
-pending further training data.
+region-level mask correction (Mask Correction tab), and ground-truth
+validation (Validate tab: confusion matrix, Dice/IoU/precision/recall/F1)
+are all real (a trained checkpoint is loaded from
+data/models/segmentation_unet.pt if present). Cell-type classification
+and health scoring are still stubs pending further training data.
 """
 
 from __future__ import annotations
 
+import io
 import tempfile
 import uuid
 from pathlib import Path
@@ -18,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
+import tifffile
 from skimage.measure import label, regionprops
 
 from mitomorph.data.database import AnalysisDatabase
@@ -28,8 +31,21 @@ from mitomorph.preprocessing.channel_utils import extract_mitochondrial_channel
 from mitomorph.preprocessing.io import load_image
 from mitomorph.preprocessing.normalization import zscore_normalize
 from mitomorph.preprocessing.validators import validate_image
-from mitomorph.reporting.figures import plot_condition_comparison, plot_feature_correlation
+from mitomorph.reporting.figures import (
+    plot_condition_comparison,
+    plot_confusion_matrix,
+    plot_feature_correlation,
+    plot_feature_histogram,
+)
 from mitomorph.segmentation.infer import load_model, segment
+from mitomorph.segmentation.metrics import (
+    confusion_matrix,
+    dice_score,
+    f1_score,
+    iou_score,
+    precision_score,
+    recall_score,
+)
 
 st.set_page_config(page_title="MitoMorph", layout="wide")
 
@@ -96,6 +112,15 @@ def _render_overlay(image_arr: np.ndarray, mask: np.ndarray):
     ax.axis("off")
     fig.patch.set_alpha(0.0)
     fig.tight_layout(pad=0)
+    return fig
+
+
+def _render_confidence_heatmap(confidence: np.ndarray):
+    fig, ax = plt.subplots(figsize=(5, 5))
+    im = ax.imshow(confidence, cmap="inferno", vmin=0.0, vmax=1.0)
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    fig.tight_layout()
     return fig
 
 
@@ -279,7 +304,9 @@ status_col3.metric(
 )
 status_col4.metric("Classification", "Stub", help="Cell-type & health classifiers need a trained checkpoint")
 
-tab_analyze, tab_results, tab_correct = st.tabs(["Analyze", "Results", "Mask Correction"])
+tab_analyze, tab_results, tab_correct, tab_validate = st.tabs(
+    ["Analyze", "Results", "Mask Correction", "Validate"]
+)
 
 with tab_analyze:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -321,7 +348,7 @@ with tab_analyze:
                     st.pyplot(_render_overlay(result["image"], result["mask"]))
                 with stats_col:
                     st.metric("Detected regions", n_regions)
-                    st.metric("Fragmentation index", f"{result['fragmentation_index']:.4f}")
+                    st.metric("Fragmentation index", f"{result['fragmentation_index']:.3e}")
                     st.metric("Mitochondrial density", f"{result['mitochondrial_density']:.4f}")
                     if n_regions:
                         mean_area = sum(f.area for f in result["features"]) / n_regions
@@ -331,12 +358,36 @@ with tab_analyze:
                         "Zero regions is expected on fluorescence images — this checkpoint "
                         "was trained on electron microscopy data."
                     )
-                elif n_regions >= 3:
-                    st.markdown("##### Region shape correlation (FR-37)")
+
+                st.markdown("##### Model confidence map")
+                st.caption(
+                    "Raw per-pixel detection confidence (before the 0.5 threshold is applied). "
+                    "Brighter areas are where the model is more confident it's looking at a "
+                    "mitochondrion."
+                )
+                st.pyplot(_style_for_dark_theme(_render_confidence_heatmap(result["confidence"])))
+
+                if n_regions >= 3:
+                    chart_col1, chart_col2 = st.columns(2)
                     feature_df = _features_to_df(result["features"])
-                    st.pyplot(
-                        _style_for_dark_theme(plot_feature_correlation(feature_df, "area", "circularity"))
-                    )
+                    with chart_col1:
+                        st.markdown("##### Region area distribution")
+                        st.pyplot(
+                            _style_for_dark_theme(
+                                plot_feature_histogram(feature_df["area"].tolist(), xlabel="area (px²)")
+                            )
+                        )
+                    with chart_col2:
+                        st.markdown("##### Region shape correlation (FR-37)")
+                        st.pyplot(
+                            _style_for_dark_theme(plot_feature_correlation(feature_df, "area", "circularity"))
+                        )
+
+                st.caption(
+                    "Note: re-analyzing the same image always produces the same detected "
+                    "regions and charts — the model is deterministic and only looks at pixel "
+                    "data. Animal ID/Condition/Time point change only the label saved with the run."
+                )
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_results:
@@ -378,6 +429,11 @@ with tab_results:
             conditions_present = sorted({r["condition"] for r in filtered_runs if r["condition"]})
             if len(conditions_present) >= 2:
                 st.markdown("##### Comparison across conditions (FR-36)")
+                st.caption(
+                    "Only shows conditions with at least one saved run. To add "
+                    "'SCI + PTEN-KO' or 'SCI + PGC1a' here, run an analysis in the "
+                    "Analyze tab with that condition selected."
+                )
                 comparison_df = pd.DataFrame(
                     [
                         {
@@ -416,7 +472,7 @@ with tab_results:
                 st.image(selected["overlay_path"])
             with stats_col:
                 st.metric("Detected regions", selected["region_count"])
-                st.metric("Fragmentation index", f"{selected['fragmentation_index']:.4f}")
+                st.metric("Fragmentation index", f"{selected['fragmentation_index']:.3e}")
                 st.metric("Mitochondrial density", f"{selected['mitochondrial_density']:.4f}")
                 st.metric("Mean region area (px²)", f"{selected['mean_area']:.1f}")
 
@@ -477,6 +533,83 @@ with tab_correct:
                 st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
+with tab_validate:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("Validate Against Ground Truth")
+    st.caption(
+        "Upload a microscopy image together with a known ground-truth mask (a binary TIFF "
+        "marking true mitochondria) to measure segmentation accuracy against it (NFR-05, "
+        "NFR-06). This needs real labeled data — it can't validate against an image alone."
+    )
+
+    val_col1, val_col2 = st.columns(2)
+    val_image_file = val_col1.file_uploader(
+        "Microscopy image", type=["tif", "tiff", "czi"], key="validate_image"
+    )
+    val_mask_file = val_col2.file_uploader(
+        "Ground-truth mask (TIFF)", type=["tif", "tiff"], key="validate_mask"
+    )
+
+    run_validation = st.button(
+        "Run validation", type="primary", disabled=val_image_file is None or val_mask_file is None
+    )
+    if run_validation:
+        if _get_model() is None:
+            st.warning("No trained segmentation checkpoint found. Segmentation can't run without one.")
+        else:
+            try:
+                with st.spinner("Running segmentation and comparing to ground truth..."):
+                    suffix = Path(val_image_file.name).suffix or ".tif"
+                    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                        tmp.write(val_image_file.getvalue())
+                        tmp_path = tmp.name
+                    try:
+                        image_obj = load_image(tmp_path)
+                        validate_image(image_obj)
+                        mito_channel = extract_mitochondrial_channel(image_obj)
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+
+                    normalized = zscore_normalize(mito_channel)
+                    pred_result = segment(_get_model(), normalized, confidence_threshold=0.5)
+
+                    gt_mask = tifffile.imread(io.BytesIO(val_mask_file.getvalue())) > 127
+                    if gt_mask.shape != pred_result.mask.shape:
+                        raise ValueError(
+                            f"Ground-truth mask shape {gt_mask.shape} doesn't match image "
+                            f"shape {pred_result.mask.shape}"
+                        )
+            except Exception as exc:  # noqa: BLE001 — show a clean message, not a raw traceback
+                st.error(f"Validation failed: {exc}")
+            else:
+                metric_cols = st.columns(5)
+                metric_cols[0].metric("Dice", f"{dice_score(pred_result.mask, gt_mask):.3f}")
+                metric_cols[1].metric("IoU", f"{iou_score(pred_result.mask, gt_mask):.3f}")
+                metric_cols[2].metric("Precision", f"{precision_score(pred_result.mask, gt_mask):.3f}")
+                metric_cols[3].metric("Recall", f"{recall_score(pred_result.mask, gt_mask):.3f}")
+                metric_cols[4].metric("F1", f"{f1_score(pred_result.mask, gt_mask):.3f}")
+
+                cm_col, overlay_col = st.columns(2)
+                with cm_col:
+                    st.markdown("##### Confusion matrix (pixel-level)")
+                    cm = confusion_matrix(pred_result.mask, gt_mask)
+                    st.pyplot(_style_for_dark_theme(plot_confusion_matrix(cm)))
+                with overlay_col:
+                    st.markdown("##### Predicted (red) vs. ground truth (green)")
+                    fig, ax = plt.subplots(figsize=(5, 5))
+                    ax.imshow(mito_channel, cmap="gray")
+                    gt_overlay = np.zeros((*gt_mask.shape, 4))
+                    gt_overlay[gt_mask] = [0.2, 1.0, 0.3, 0.4]
+                    ax.imshow(gt_overlay)
+                    pred_overlay = np.zeros((*pred_result.mask.shape, 4))
+                    pred_overlay[pred_result.mask] = [1.0, 0.25, 0.35, 0.4]
+                    ax.imshow(pred_overlay)
+                    ax.axis("off")
+                    fig.patch.set_alpha(0.0)
+                    fig.tight_layout(pad=0)
+                    st.pyplot(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 with st.sidebar:
     st.markdown("### About")
     st.write(
@@ -487,7 +620,8 @@ with st.sidebar:
     st.markdown("### Pipeline status")
     st.markdown(
         '<span class="badge badge-live">Live</span>&nbsp; Preprocessing, segmentation, '
-        "morphometrics, run persistence, mask correction, comparison figures",
+        "morphometrics, run persistence, mask correction, comparison figures, "
+        "ground-truth validation",
         unsafe_allow_html=True,
     )
     st.markdown(
