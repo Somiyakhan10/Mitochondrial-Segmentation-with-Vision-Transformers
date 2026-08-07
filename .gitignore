@@ -17,6 +17,9 @@ data/models/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/models/.gitkeep
+# Trained checkpoint is committed on purpose so cloud deploys (Render) have it -
+# GitHub's hard limit is 100MB and this file is ~93MB.
+!data/models/segmentation_unet.pt
 
 # Experiment tracking
 mlruns/
