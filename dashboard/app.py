@@ -125,10 +125,17 @@ def _render_confidence_heatmap(confidence: np.ndarray):
 
 
 def _style_for_dark_theme(fig: plt.Figure) -> plt.Figure:
-    """Recolor a matplotlib figure's axes/text to read well on the dashboard's dark background."""
-    fig.patch.set_alpha(0.0)
+    """Recolor a matplotlib figure to match the dashboard's dark card background.
+
+    Uses an explicit opaque dark facecolor rather than a transparent one:
+    st.pyplot()'s rendering doesn't reliably honor a transparent figure
+    patch, which was leaving light-on-white (near-invisible) text/points
+    behind — this makes the background match the theme unconditionally.
+    """
+    fig.patch.set_facecolor("#1A1826")
+    fig.patch.set_alpha(1.0)
     for ax in fig.axes:
-        ax.set_facecolor("none")
+        ax.set_facecolor("#1A1826")
         ax.tick_params(colors="#A8A4C0")
         ax.xaxis.label.set_color("#EDEBF7")
         ax.yaxis.label.set_color("#EDEBF7")
