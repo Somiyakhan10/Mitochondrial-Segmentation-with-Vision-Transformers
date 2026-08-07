@@ -16,7 +16,28 @@ mitochondria in spinal cord tissue microscopy images.
 </div>
 
 ---
+## Overview
 
+MitoMorph automates a process that is otherwise done manually under a
+microscope: identifying individual mitochondria in tissue images and
+measuring their size, shape, and distribution. It combines a trained
+deep learning segmentation model with a classical image-analysis
+pipeline, exposed through both a command-line interface and an
+interactive dashboard.
+
+The segmentation model is a U-Net with a ResNet-34 encoder, trained on
+the public EPFL/Lucchi electron microscopy mitochondria dataset. On a
+held-out test slice it achieves:
+
+| Metric | Score |
+|---|---|
+| Dice coefficient | 0.949 |
+| IoU | 0.902 |
+| Precision | 0.918 |
+| Recall | 0.981 |
+| F1 | 0.949 |
+
+---
 ## Output
 
 
@@ -51,27 +72,6 @@ matrix and a predicted-vs-ground-truth overlay.
 ![Validate tab](docs/screenshots/validate-tab.png)
 
 ---
-
-## Overview
-
-MitoMorph automates a process that is otherwise done manually under a
-microscope: identifying individual mitochondria in tissue images and
-measuring their size, shape, and distribution. It combines a trained
-deep learning segmentation model with a classical image-analysis
-pipeline, exposed through both a command-line interface and an
-interactive dashboard.
-
-The segmentation model is a U-Net with a ResNet-34 encoder, trained on
-the public EPFL/Lucchi electron microscopy mitochondria dataset. On a
-held-out test slice it achieves:
-
-| Metric | Score |
-|---|---|
-| Dice coefficient | 0.949 |
-| IoU | 0.902 |
-| Precision | 0.918 |
-| Recall | 0.981 |
-| F1 | 0.949 |
 
 ## Key Capabilities
 
