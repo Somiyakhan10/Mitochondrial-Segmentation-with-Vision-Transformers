@@ -17,10 +17,8 @@ mitochondria in spinal cord tissue microscopy images.
 
 ---
 
-## Screenshots
+## Output
 
-> Place screenshot files in `docs/screenshots/` using the filenames referenced
-> below and they will render automatically.
 
 **Analyze — upload and run segmentation**
 Upload a microscopy image and run automated segmentation. The interface
